@@ -1,0 +1,7 @@
+# Copyright (c) 2017 CloudZero - ALL RIGHTS RESERVED - PROPRIETARY AND CONFIDENTIAL
+# Unauthorized copying of this file and/or project, via any medium is strictly prohibited.
+# Direct all questions to legal@cloudzero.com
+
+boto3==1.5.7
+botocore==1.8.21
+simplejson==3.11.1
