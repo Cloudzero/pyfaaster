@@ -9,6 +9,10 @@ import io
 import boto3
 import simplejson as json
 
+import faaster_aws.tools as tools
+
+logger = tools.setup_logging('serveless')
+
 
 def load(conn, config_bucket, config_file):
     try:
@@ -21,20 +25,21 @@ def load(conn, config_bucket, config_file):
 
     loaded_configuration = json.loads(file_content)
     settings = loaded_configuration.get('settings', {})
-    decrypted_settings = {k: v.update(value=decrypt_text(conn, v['value'])) if v['encrypted'] else v
+    print(f'loaded settings: {settings}')
+    decrypted_settings = {k: {**v, **{'value': decrypt_text(conn, v['value'])}} if v['encrypted'] else v
                           for k, v in settings.items()}
     return decrypted_settings
 
 
 def save(conn, config_bucket, config_file, settings):
-    encrypted_settings = {k: v.update(value=encrypt_text(conn, v['value'])) if v['encrypted'] else v
+    encrypted_settings = {k: {**v, **{'value': encrypt_text(conn, v['value'])}} if v['encrypted'] else v
                           for k, v in settings.items()}
     configuration = {
-        'settings': settings,
+        'settings': encrypted_settings,
         'last_updated': dt.datetime.now(tz=dt.timezone.utc).isoformat(),
     }
-    conn['s3_resource'].Object(config_file).put(Body=io.StringIO(json.dumps(configuration)).read())
-    return settings
+    conn['s3_resource'].Object(config_bucket, config_file).put(Body=io.StringIO(json.dumps(configuration)).read())
+    return encrypted_settings
 
 
 def decrypt_text(conn, cipher_text):
@@ -47,33 +52,10 @@ def encrypt_text(conn, plain_text):
     return base.b64encode(cipher_text_blob) if cipher_text_blob else plain_text
 
 
-def conn():
+def conn(encrypt_key_arn):
     return {
         'kms': boto3.client('kms'),
         's3_resource': boto3.resource('s3'),
         's3_client': boto3.client('s3'),
-        'encrypt_key_arn': 'arn:aws:kms:us-east-1:618300337335:key/012ff618-e387-40ee-a472-438f81fecb25',
+        'encrypt_key_arn': encrypt_key_arn,
     }
-
-
-x = 1
-os.environ['AWS_DEFAULT_PROFILE'] = 'cz-dev-core'
-conn = {
-    'kms': boto3.client('kms'),
-    's3_resource': boto3.resource('s3'),
-    's3_client': boto3.client('s3'),
-    'encrypt_key_arn': 'arn:aws:kms:us-east-1:618300337335:key/012ff618-e387-40ee-a472-438f81fecb25',
-}
-
-
-keys = conn['kms'].list_keys()
-
-settings = load(conn, 'cz-corepipeline-adamcore167-618300337335', 'configuration.json')
-
-new_settings = {**settings, **{'test': {'value': 'foo', 'encrypted': True}}}
-
-s = save(conn, 'cz-corepipeline-adamcore167-618300337335', 'newconf.json', new_settings)
-
-
-
-

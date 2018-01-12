@@ -7,7 +7,7 @@ import os
 
 import simplejson as json
 
-from faaster_aws import S3Configuration
+import faaster_aws.configuration as conf
 import faaster_aws.tools as tools
 import faaster_aws.utils as utils
 
@@ -228,7 +228,7 @@ def pausable(handler):
     def handler_wrapper(event, context, **kwargs):
         if os.environ.get('PAUSE'):
             logger.warning('Function paused')
-            return { 'statusCode': 503, 'body': 'info: paused'}
+            return {'statusCode': 503, 'body': 'info: paused'}
         return handler(event, context, **kwargs)
 
 
@@ -236,7 +236,7 @@ def pingable(handler):
     def handler_wrapper(event, context, **kwargs):
         if event.get('detail-type') == 'Scheduled Event' and event.get('source') == 'aws.events':
             logger.debug('Ping received, keeping function alive')
-            return aws_lambda_response(event, context, msg_type='info', msg='ping', code=200)
+            return 'info: ping'
         return handler(event, context, **kwargs)
 
     return handler_wrapper
@@ -248,8 +248,9 @@ def configuration_aware(create_config=False):
         @environ_aware(['CONFIG'], [])
         def handler_wrapper(event, context, **kwargs):
             try:
-                configuration = S3Configuration(create=create_config)
-            except S3Configuration.ConfigurationMissing as error:
+                conn = conf.conn('arn')
+                configuration = conf.load(conn, kwargs['CONFIG'], 'configuration.json')
+            except Exception as error:
                 return {'statusCode': 503, 'body': f"Reactor must be configured before use ({error})"}
             kwargs['configuration'] = configuration
             return handler(event, context, **kwargs)
@@ -297,7 +298,7 @@ def default(create_config=False):
         @pausable
         def handler_wrapper(event, context, **kwargs):
             try:
-                return handler(event, context, **kwwargs)
+                return handler(event, context, **kwargs)
             except Exception as err:
                 logger.error('Lambda Event : {}'.format(event))
                 logger.exception('{}:{}'.format(type(err), err))
