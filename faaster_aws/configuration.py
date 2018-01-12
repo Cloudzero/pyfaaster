@@ -4,6 +4,7 @@
 
 import base64 as base
 import datetime as dt
+import functools
 import io
 
 import boto3
@@ -25,15 +26,11 @@ def load(conn, config_bucket, config_file):
 
     loaded_configuration = json.loads(file_content)
     settings = loaded_configuration.get('settings', {})
-    print(f'loaded settings: {settings}')
-    decrypted_settings = {k: {**v, **{'value': decrypt_text(conn, v['value'])}} if v['encrypted'] else v
-                          for k, v in settings.items()}
-    return decrypted_settings
+    return decrypt_settings(conn, settings)
 
 
 def save(conn, config_bucket, config_file, settings):
-    encrypted_settings = {k: {**v, **{'value': encrypt_text(conn, v['value'])}} if v['encrypted'] else v
-                          for k, v in settings.items()}
+    encrypted_settings = encrypt_settings(conn, settings)
     configuration = {
         'settings': encrypted_settings,
         'last_updated': dt.datetime.now(tz=dt.timezone.utc).isoformat(),
@@ -42,8 +39,23 @@ def save(conn, config_bucket, config_file, settings):
     return encrypted_settings
 
 
+def crypt_settings(crypt_fn, settings):
+    return {k: {**v, **{'value': crypt_fn(v['value'])}} if v['encrypted'] else v
+            for k, v in settings.items()}
+
+
+def encrypt_settings(conn, settings):
+    return crypt_settings(functools.partial(encrypt_text, conn), settings)
+
+
+def decrypt_settings(conn, settings):
+    return crypt_settings(functools.partial(decrypt_text, conn), settings)
+
+
 def decrypt_text(conn, cipher_text):
-    return conn['kms'].decrypt(CiphertextBlob=base.b64decode(cipher_text))['Plaintext'].decode()
+    response = conn['kms'].decrypt(CiphertextBlob=base.b64decode(cipher_text))
+    plain_text = response.get('Plaintext')
+    return plain_text.decode() if plain_text else cipher_text
 
 
 def encrypt_text(conn, plain_text):
