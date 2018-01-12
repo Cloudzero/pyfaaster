@@ -1,0 +1,11 @@
+{
+  "name": "cloudzero-core-web",
+  "email": "support@cloudzero.com",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "serverless": "^1.23.0",
+    "serverless-dynamodb-autoscaling": "^0.6.1",
+    "serverless-prune-plugin": "^1.1.2",
+    "serverless-pseudo-parameters": "^1.1.5"
+  }
+}
