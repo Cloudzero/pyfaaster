@@ -230,6 +230,7 @@ def pausable(handler):
             logger.warning('Function paused')
             return {'statusCode': 503, 'body': 'info: paused'}
         return handler(event, context, **kwargs)
+    return handler_wrapper
 
 
 def pingable(handler):
@@ -242,16 +243,26 @@ def pingable(handler):
     return handler_wrapper
 
 
-def configuration_aware(create_config=False):
+def configuration_aware(config_file, create=False):
     def configuration_handler(handler):
 
         @environ_aware(['CONFIG'], [])
         def handler_wrapper(event, context, **kwargs):
             try:
+                logger.debug('Loading CONFIG')
                 conn = conf.conn('arn')
-                configuration = conf.load(conn, kwargs['CONFIG'], 'configuration.json')
+                configuration = conf.load(conn, kwargs['CONFIG'], config_file)
             except Exception as error:
-                return {'statusCode': 503, 'body': f"Reactor must be configured before use ({error})"}
+                logger.debug('Could not load CONFIG')
+                if create:
+                    logger.debug('... but can try to create!')
+                    try:
+                        configuration = conf.save(conn, kwargs['CONFIG'], config_file, {})
+                        logger.debug('Created empty CONFIG')
+                    except Exception as error:
+                        return {'statusCode': 503, 'body': f"Could not create configuration file ({error})"}
+                else:
+                    return {'statusCode': 503, 'body': f"Could not read configuration file ({error})"}
             kwargs['configuration'] = configuration
             return handler(event, context, **kwargs)
         return handler_wrapper
@@ -276,7 +287,7 @@ def account_id_aware(handler):
     return handler_wrapper
 
 
-def default(create_config=False):
+def default():
     """
     AWS lambda handler handler. A wrapper with standard boilerplate implementing the
     best practices we've developed
@@ -292,7 +303,7 @@ def default(create_config=False):
         @apig_response
         @account_id_aware
         @client_config_aware
-        @configuration_aware(create_config)
+        @configuration_aware('configuration.json', True)
         @namespace_aware
         @pingable
         @pausable

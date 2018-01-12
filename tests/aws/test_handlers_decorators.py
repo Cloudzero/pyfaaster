@@ -4,6 +4,8 @@
 
 
 import attrdict
+import boto3
+import moto
 import os
 import pytest
 import simplejson as json
@@ -18,7 +20,7 @@ def context(mocker):
 
     orig_env = os.environ.copy()
     os.environ['NAMESPACE'] = 'test-ns'
-    os.environ['CONFIG'] = 'configfile'
+    os.environ['CONFIG'] = 'config_bucket'
     context.os = {'environ': os.environ}
 
     yield context
@@ -240,17 +242,26 @@ def test_no_scopes_in_context():
     assert 'missing' in response['body']
 
 
-class MockContext:
+class MockContext(dict):
     def __init__(self, farn):
         self.invoked_function_arn = farn
+        dict.__init__(self, invoked_function_arn=farn)
 
 
-@pytest.mark.unit
+@pytest.mark.integration
+@moto.mock_s3
+@moto.mock_kms
+@moto.mock_sts
 def test_default(context):
     event = {}
-    context = MockContext('::::arn')
-    handler = decs.default(False)(identity_handler)
+    lambda_context = MockContext('::::arn')
+    handler = decs.default()(identity_handler)
 
-    response = handler(event, context)
-    assert response['statusCode'] == 500
-    assert 'missing' in response['body']
+    boto3.client('s3').create_bucket(Bucket=utils.deep_get(context, 'os', 'environ', 'CONFIG'))
+
+    response = handler(event, lambda_context)
+    assert response['statusCode'] == 200
+    response_body = json.loads(response['body'])
+    assert response_body['event'] == event
+    keys = ['account_id', 'client_details', 'CONFIG', 'configuration', 'NAMESPACE']
+    assert all(k in response_body['kwargs'] for k in keys)

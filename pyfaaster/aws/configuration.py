@@ -16,13 +16,9 @@ logger = tools.setup_logging('serveless')
 
 
 def load(conn, config_bucket, config_file):
-    try:
-        content_object = conn['s3_client'].get_object(Bucket=config_bucket, Key=config_file)
-        file_content = content_object['Body'].read().decode('utf-8')
-    except Exception as error:
-        logger.exception(error)
-        logger.error("Could not load configuration.")
-        return {}
+
+    content_object = conn['s3_client'].get_object(Bucket=config_bucket, Key=config_file)
+    file_content = content_object['Body'].read().decode('utf-8')
 
     loaded_configuration = json.loads(file_content)
     settings = loaded_configuration.get('settings', {})
