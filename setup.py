@@ -15,9 +15,9 @@ from shutil import rmtree
 from setuptools import setup, Command
 
 # Package meta-data.
-NAME = 'faaster_aws'
+NAME = 'pyfaaster'
 DESCRIPTION = 'Useful Utilities for Unbelievable AWS Lambdas'
-URL = 'https://github.com/Cloudzero/faaster-aws'
+URL = 'https://github.com/Cloudzero/pyfaaster'
 EMAIL = 'support@cloudzero.com'
 AUTHOR = 'CloudZero'
 

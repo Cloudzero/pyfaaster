@@ -6,7 +6,7 @@
 import moto
 import pytest
 
-import faaster_aws.configuration as conf
+import pyfaaster.aws.configuration as conf
 
 
 @pytest.mark.integration

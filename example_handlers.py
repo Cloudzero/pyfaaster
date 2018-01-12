@@ -3,7 +3,7 @@
 # Licensed under the BSD-style license. See LICENSE file in the project root for full license information.
 
 
-import faaster_aws.decorators as decs
+import pyfaaster.aws.decorators as decs
 
 
 @decs.lambda_handler()

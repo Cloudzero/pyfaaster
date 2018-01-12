@@ -8,8 +8,8 @@ import os
 import pytest
 import simplejson as json
 
-import faaster_aws.handlers_decorators as decs
-import faaster_aws.utils as utils
+import pyfaaster.aws.handlers_decorators as decs
+import pyfaaster.aws.utils as utils
 
 
 @pytest.fixture(scope='function')

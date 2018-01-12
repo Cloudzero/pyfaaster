@@ -10,7 +10,7 @@ import io
 import boto3
 import simplejson as json
 
-import faaster_aws.tools as tools
+import pyfaaster.aws.tools as tools
 
 logger = tools.setup_logging('serveless')
 

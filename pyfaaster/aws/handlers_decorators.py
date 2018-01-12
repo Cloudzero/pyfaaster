@@ -7,9 +7,9 @@ import os
 
 import simplejson as json
 
-import faaster_aws.configuration as conf
-import faaster_aws.tools as tools
-import faaster_aws.utils as utils
+import pyfaaster.aws.configuration as conf
+import pyfaaster.aws.tools as tools
+import pyfaaster.aws.utils as utils
 
 
 logger = tools.setup_logging('serverless')

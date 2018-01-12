@@ -3,7 +3,7 @@
 # Direct all questions to legal@cloudzero.com
 
 
-NAME ?= faaster-aws
+NAME ?= pyfaaster
 
 ERROR_COLOR = \033[1;31m
 INFO_COLOR = \033[1;32m
