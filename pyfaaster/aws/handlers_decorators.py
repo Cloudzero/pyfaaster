@@ -214,6 +214,17 @@ def sub_aware(handler):
 
 
 def apig_response(handler):
+    """ Decorator that will wrap handler response in an API Gateway compatible dict with
+    statusCode and json serialized body. If handler result has a 'body', this decorator
+    will serialize it into the API Gateway body; if the handler result does _not_ have a
+    body, this decorator will return statusCode 200 and serialize the entire result.
+
+    Args:
+        handler (func): a handler function with the signature (event, context) -> result
+
+    Returns:
+        handler (func): a lambda handler function that whose result is APIGateway compatible.
+    """
     def handler_wrapper(event, context, **kwargs):
         res = handler(event, context, **kwargs)
         return {
@@ -225,8 +236,18 @@ def apig_response(handler):
 
 
 def pausable(handler):
+    """ Decorator that will "pause', i.e. short circuit and return immediately before calling
+    the decorated handler, if the PAUSE environment variable is set.
+
+    Args:
+        handler (func): a handler function with the signature (event, context) -> result
+
+    Returns:
+        handler (func): a pausable lambda handler
+    """
+    @environ_aware([], ['PAUSE'])
     def handler_wrapper(event, context, **kwargs):
-        if os.environ.get('PAUSE'):
+        if kwargs.get('PAUSE'):
             logger.warning('Function paused')
             return {'statusCode': 503, 'body': 'info: paused'}
         return handler(event, context, **kwargs)
@@ -234,6 +255,15 @@ def pausable(handler):
 
 
 def pingable(handler):
+    """ Decorator that will short circuit and return immediately before calling
+    the decorated handler if the event is a "ping" event.
+
+    Args:
+        handler (func): a handler function with the signature (event, context) -> result
+
+    Returns:
+        handler (func): a pingable lambda handler
+    """
     def handler_wrapper(event, context, **kwargs):
         if event.get('detail-type') == 'Scheduled Event' and event.get('source') == 'aws.events':
             logger.debug('Ping received, keeping function alive')
@@ -244,6 +274,17 @@ def pingable(handler):
 
 
 def configuration_aware(config_file, create=False):
+    """ Decorator that expects a configuration file in an S3 Bucket specified by the 'CONFIG'
+    environment variable and S3 Bucket Key (path) specified by config_file. If create=True, this
+    decorator will create an empty configuration file instead of erring.
+
+    Args:
+        config_file (str): key in the 'CONFIG' S3 bucket of expected configuration file
+        create (Bool): optionally create configuration file if absent
+
+    Returns:
+        handler (func): a configuration aware lambda handler
+    """
     def configuration_handler(handler):
 
         @environ_aware(['CONFIG'], [])
@@ -270,6 +311,14 @@ def configuration_aware(config_file, create=False):
 
 
 def client_config_aware(handler):
+    """ Decorator that will find the Source IP and Client in the event headers.
+
+    Args:
+        handler (func): a handler function with the signature (event, context) -> result
+
+    Returns:
+        handler (func): a client config aware lambda handler
+    """
     def handler_wrapper(event, context, **kwargs):
         client_details = tools.get_client_details(event)
         logger.info(f"{handler.__name__} | {client_details}")
@@ -280,6 +329,14 @@ def client_config_aware(handler):
 
 
 def account_id_aware(handler):
+    """ Decorator that will find the Account ID in the lambda context.
+
+    Args:
+        handler (func): a handler function with the signature (event, context) -> result
+
+    Returns:
+        handler (func): a context aware lambda handler
+    """
     def handler_wrapper(event, context, **kwargs):
         account_id = tools.get_account_id(context)
         kwargs['account_id'] = account_id

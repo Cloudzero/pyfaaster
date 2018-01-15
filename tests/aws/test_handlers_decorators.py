@@ -38,6 +38,16 @@ def identity_handler(event, context, **kwargs):
 
 
 @pytest.mark.unit
+def test_environ_aware_opts():
+    event = {}
+    handler = decs.environ_aware([], ['NAMESPACE', 'FOO'])(identity_handler)
+
+    response = handler(event, None)
+    assert utils.deep_get(response, 'kwargs', 'NAMESPACE') == utils.deep_get(context, 'os', 'environ', 'NAMESPACE')
+    assert not utils.deep_get(response, 'kwargs', 'FOO') 
+
+
+@pytest.mark.unit
 def test_domain_aware():
     domain = 'test.com'
     event = {
@@ -179,6 +189,52 @@ def test_body_json_decode_exception():
     response = handler(event, None)
     assert response.get('statusCode') == 400
     assert 'cannot decode json' in response.get('body')
+
+
+@pytest.mark.unit
+def test_sub_aware():
+    event = {
+        'requestContext': {
+            'authorizer': {
+                'sub': 'uuid',
+            },
+        },
+    }
+    handler = decs.sub_aware(identity_handler)
+
+    response = handler(event, None)
+    assert utils.deep_get(response, 'kwargs', 'sub') == utils.deep_get(event, 'requestContext', 'authorizer', 'sub')
+
+
+@pytest.mark.unit
+def test_sub_aware_none():
+    event = {
+        'requestContext': {
+            'authorizer': {
+            },
+        },
+    }
+    handler = decs.sub_aware(identity_handler)
+
+    response = handler(event, None)
+    assert response['statusCode'] == 500
+
+@pytest.mark.unit
+def test_apig_response():
+    event = {'foo': 'bar'}
+    handler = decs.apig_response(identity_handler)
+    response = handler(event, None)
+    assert response['statusCode'] == 200
+    assert json.loads(response['body'])['event'] == event
+
+
+@pytest.mark.unit
+def test_apig_response_with_statusCode():
+    event = {'foo': 'bar'}
+    handler = decs.apig_response(lambda e, c, **kwargs: {'statusCode': 500, 'body': event})
+    response = handler(event, None)
+    assert response['statusCode'] == 500
+    assert json.loads(response['body']) == event
 
 
 @pytest.mark.unit
