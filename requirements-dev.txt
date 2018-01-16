@@ -16,4 +16,5 @@ pytest-catchlog==1.2.2
 pytest-cov==2.5.1
 pytest-mock==1.6.3
 tox==2.7.0
+twine==1.9.1
 -r requirements.txt

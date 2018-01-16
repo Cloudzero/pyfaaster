@@ -12,7 +12,7 @@ import os
 import sys
 from shutil import rmtree
 
-from setuptools import setup, Command
+from setuptools import setup, Command, find_packages
 
 # Package meta-data.
 NAME = 'pyfaaster'
@@ -80,9 +80,7 @@ setup(
     author=AUTHOR,
     author_email=EMAIL,
     url=URL,
-    # packages=find_packages(exclude=('tests',)),
-
-    py_modules=[NAME],
+    packages=find_packages(exclude=['tests*']),
 
     install_requires=REQUIRED,
     include_package_data=True,
