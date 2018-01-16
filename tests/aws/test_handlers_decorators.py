@@ -38,6 +38,15 @@ def identity_handler(event, context, **kwargs):
 
 
 @pytest.mark.unit
+def test_environ_aware_named_kwargs(context):
+    @decs.environ_aware(['NAMESPACE'], [])
+    def handler(e, c, NAMESPACE=None):
+        assert NAMESPACE == utils.deep_get(context, 'os', 'environ', 'NAMESPACE')
+
+    handler({}, None)
+
+
+@pytest.mark.unit
 def test_environ_aware_opts():
     event = {}
     handler = decs.environ_aware([], ['NAMESPACE', 'FOO'])(identity_handler)
