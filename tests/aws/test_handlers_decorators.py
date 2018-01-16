@@ -21,6 +21,7 @@ def context(mocker):
     orig_env = os.environ.copy()
     os.environ['NAMESPACE'] = 'test-ns'
     os.environ['CONFIG'] = 'config_bucket'
+    os.environ['ENCRYPT_KEY_ARN'] = 'arn'
     context.os = {'environ': os.environ}
 
     yield context
@@ -53,7 +54,7 @@ def test_environ_aware_opts():
 
     response = handler(event, None)
     assert utils.deep_get(response, 'kwargs', 'NAMESPACE') == utils.deep_get(context, 'os', 'environ', 'NAMESPACE')
-    assert not utils.deep_get(response, 'kwargs', 'FOO') 
+    assert not utils.deep_get(response, 'kwargs', 'FOO')
 
 
 @pytest.mark.unit
@@ -227,6 +228,7 @@ def test_sub_aware_none():
 
     response = handler(event, None)
     assert response['statusCode'] == 500
+
 
 @pytest.mark.unit
 def test_apig_response():

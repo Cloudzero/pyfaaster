@@ -287,11 +287,11 @@ def configuration_aware(config_file, create=False):
     """
     def configuration_handler(handler):
 
-        @environ_aware(['CONFIG'], [])
+        @environ_aware(['CONFIG', 'ENCRYPT_KEY_ARN'], [])
         def handler_wrapper(event, context, **kwargs):
             try:
                 logger.debug('Loading CONFIG')
-                conn = conf.conn('arn')
+                conn = conf.conn(kwargs['ENCRYPT_KEY_ARN'])
                 configuration = conf.load(conn, kwargs['CONFIG'], config_file)
             except Exception as error:
                 logger.debug('Could not load CONFIG')
