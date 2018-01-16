@@ -89,7 +89,7 @@ VENDORED_FOLDER := vendored
 vendor: $(VENDORED_FOLDER) check-docker
 $(VENDORED_FOLDER): requirements.txt    ## install requirements into $(VENDORED_FOLDER) when requirements.txt is newer than the folder
 	rm -rf $(VENDORED_FOLDER)
-	docker run -it -v $(shell pwd):/core lambci/lambda:build-python3.6 /bin/sh -c "pip install -r /core/requirements.txt -t /core/vendored/"
+	docker run -it -v $(shell pwd):/pyfaaster lambci/lambda:build-python3.6 /bin/sh -c "pip install -r /pyfaaster/requirements.txt -t /pyfaaster/vendored/"
 
 
 sls_help:                                ## print help for make (deploy|remove) targets
@@ -98,7 +98,7 @@ sls_help:                                ## print help for make (deploy|remove) 
 	@printf "    make stage=<namespace> [profile=<aws-profle>] [environment=(dev|staging|prod)] deploy\n"
 	@printf "\n"
 	@printf "Required:\n"
-	@printf "    stage:       core web stage, uniq \"environment\" so you can install multiple web apps in same account.\n"
+	@printf "    stage:       stage aka \"namespace\", so you can install multiple stacks in same account.\n"
 	@printf "\n"
 	@printf "Optional:\n"
 	@printf "    profile:     aws profile used for credentials, needed if you don't set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY or AWS_DEFAULT_PROFILE env vars \n"

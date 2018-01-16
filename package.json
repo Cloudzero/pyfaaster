@@ -1,7 +1,7 @@
 {
-  "name": "cloudzero-core-web",
+  "name": "pyfaaster",
   "email": "support@cloudzero.com",
-  "license": "UNLICENSED",
+  "license": "BSD",
   "dependencies": {
     "serverless": "^1.23.0",
     "serverless-dynamodb-autoscaling": "^0.6.1",
