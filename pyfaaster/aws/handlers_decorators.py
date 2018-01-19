@@ -227,13 +227,20 @@ def apig_response(handler):
         handler (func): a lambda handler function that whose result is APIGateway compatible.
     """
     def handler_wrapper(event, context, **kwargs):
-        res = handler(event, context, **kwargs)
-        res_is_dict = isinstance(res, dict)
-        return {
-            'headers': res.get('headers', {}) if res_is_dict else {},
-            'statusCode': res.get('statusCode', 200) if res_is_dict else 200,
-            'body': json.dumps(res['body'] if 'body' in res else res),
-        }
+        try:
+            res = handler(event, context, **kwargs)
+            res_is_dict = isinstance(res, dict)
+            return {
+                'headers': res.get('headers', {}) if res_is_dict else {},
+                'statusCode': res.get('statusCode', 200) if res_is_dict else 200,
+                'body': json.dumps(res['body'] if 'body' in res else res),
+            }
+        except Exception as err:
+            logger.exception(err)
+            return {
+                'statusCode': 500,
+                'body': f'Failed to {handler.__name__.replace("_", " ")}',
+            }
 
     return handler_wrapper
 
@@ -315,9 +322,6 @@ def configuration_aware(config_file, create=False):
             return handler(event, context, **kwargs)
         return handler_wrapper
     return configuration_handler
-
-
-
 
 
 def client_config_aware(handler):
