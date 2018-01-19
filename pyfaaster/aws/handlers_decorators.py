@@ -2,6 +2,7 @@
 # Copyright (c) 2016-present, CloudZero, Inc. All rights reserved.
 # Licensed under the BSD-style license. See LICENSE file in the project root for full license information.
 
+import functools
 import re
 import os
 
@@ -292,22 +293,29 @@ def configuration_aware(config_file, create=False):
             try:
                 logger.debug('Loading CONFIG')
                 conn = conf.conn(kwargs['ENCRYPT_KEY_ARN'])
-                configuration = conf.load(conn, kwargs['CONFIG'], config_file)
+                conf.load(conn, kwargs['CONFIG'], config_file)
             except Exception as error:
                 logger.debug('Could not load CONFIG')
                 if create:
                     logger.debug('... but can try to create!')
                     try:
-                        configuration = conf.save(conn, kwargs['CONFIG'], config_file, {})
+                        conf.save(conn, kwargs['CONFIG'], config_file, {})
                         logger.debug('Created empty CONFIG')
                     except Exception as error:
                         return {'statusCode': 503, 'body': f"Could not create configuration file ({error})"}
                 else:
                     return {'statusCode': 503, 'body': f"Could not read configuration file ({error})"}
-            kwargs['configuration'] = configuration
+            kwargs['configuration'] = {
+                'load': functools.partial(conf.load, conn, kwargs['CONFIG'], config_file),
+                'save': functools.partial(conf.save, conn, kwargs['CONFIG'], config_file),
+
+            }
             return handler(event, context, **kwargs)
         return handler_wrapper
     return configuration_handler
+
+
+
 
 
 def client_config_aware(handler):

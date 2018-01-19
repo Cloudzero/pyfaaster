@@ -44,7 +44,10 @@ import pyfaaster as faas
 
 @faas.configuration_aware('config.json', True)   # S3 key to a config file, create if not there
 def handler(event, context, configuration=None):
-    assert configuration == < contents of 'CONFIG' S3 bucket / config.json >
+    assert configuration == < { 
+    'load': lambda : {contents of config bucket},
+    'save': lambda d : save d into config bucket,
+    }
 ```
 
 

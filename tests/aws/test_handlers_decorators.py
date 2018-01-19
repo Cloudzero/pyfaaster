@@ -29,7 +29,8 @@ def context(mocker):
     os.environ = orig_env
 
 
-def identity_handler(event, context, **kwargs):
+def identity_handler(event, context, configuration=None, **kwargs):
+    kwargs['configuration'] = configuration['load']() if configuration else None
     response = {
         'event': event,
         'context': context,
@@ -322,6 +323,7 @@ class MockContext(dict):
 def test_default(context):
     event = {}
     lambda_context = MockContext('::::arn')
+
     handler = decs.default()(identity_handler)
 
     boto3.client('s3').create_bucket(Bucket=utils.deep_get(context, 'os', 'environ', 'CONFIG'))
