@@ -228,8 +228,10 @@ def apig_response(handler):
     """
     def handler_wrapper(event, context, **kwargs):
         res = handler(event, context, **kwargs)
+        res_is_dict = isinstance(res, dict)
         return {
-            'statusCode': res.get('statusCode') or 200,
+            'headers': res.get('headers', {}) if res_is_dict else {},
+            'statusCode': res.get('statusCode', 200) if res_is_dict else 200,
             'body': json.dumps(res['body'] if 'body' in res else res),
         }
 
