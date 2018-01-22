@@ -9,6 +9,7 @@ import os
 import simplejson as json
 
 import pyfaaster.aws.configuration as conf
+import pyfaaster.aws.publish as publish
 import pyfaaster.aws.tools as tools
 import pyfaaster.aws.utils as utils
 
@@ -71,7 +72,7 @@ def domain_aware(handler):
     return handler_wrapper
 
 
-def ok_cors_origin(*origins):
+def allow_origin_response(*origins):
     """ Decorator that will check that the event.headers.origin is in origins; if the origin
     is valid, this decorator will add it to the response headers.
 
@@ -81,7 +82,7 @@ def ok_cors_origin(*origins):
     Returns:
         handler (func): a lambda handler function that is authorized
     """
-    def cors_handler(handler):
+    def allow_origin_handler(handler):
         def handler_wrapper(event, context, **kwargs):
             logger.debug(f'Checking origin for event: {event}')
 
@@ -95,6 +96,9 @@ def ok_cors_origin(*origins):
             kwargs['request_origin'] = request_origin
             response = handler(event, context, **kwargs)
 
+            if not isinstance(response, dict):
+                raise Exception(f'Unsupported response type {type(response)}; response must be dict for *_response decorators.')
+
             # add origin to response headers
             current_headers = response.get('headers', {})
             cors_headers = {'Access-Control-Allow-Origin': request_origin,
@@ -104,7 +108,7 @@ def ok_cors_origin(*origins):
 
         return handler_wrapper
 
-    return cors_handler
+    return allow_origin_handler
 
 
 def parameters(*params):
@@ -229,11 +233,12 @@ def apig_response(handler):
     def handler_wrapper(event, context, **kwargs):
         try:
             res = handler(event, context, **kwargs)
-            res_is_dict = isinstance(res, dict)
+            if not isinstance(res, dict):
+                raise Exception(f'Unsupported return type {type(res)}; response must be dict.')
             return {
-                'headers': res.get('headers', {}) if res_is_dict else {},
-                'statusCode': res.get('statusCode', 200) if res_is_dict else 200,
-                'body': json.dumps(res['body'] if 'body' in res else res),
+                'headers': res.get('headers', {}),
+                'statusCode': res.get('statusCode', 200),
+                'body': json.dumps(res['body']) if 'body' in res else '',
             }
         except Exception as err:
             logger.exception(err)
@@ -283,6 +288,31 @@ def pingable(handler):
     return handler_wrapper
 
 
+def publisher(handler):
+    """ Decorator that will publish messages to SNS Topics. This decorator looks for a 'messages'
+    key in the result of the wrapper decorator. It expects result['messages'] to be a dict where
+    key is Topic Name or ARN and value is the message to be sent. It will publish each message to
+    its respective Topic.
+
+    Args:
+        handler (func): lambda handler whose result will be checked for messages to publish
+
+    Returns:
+        handler (func): a publishing lambda handler
+    """
+
+    @account_id_aware
+    @namespace_aware
+    @region_aware
+    def handler_wrapper(event, context, **kwargs):
+        result = handler(event, context, **kwargs)
+        conn = publish.conn(kwargs['region'], kwargs['account_id'], kwargs['NAMESPACE'])
+        publish.publish(conn, result.get('messages', {}))
+        return result
+
+    return handler_wrapper
+
+
 def configuration_aware(config_file, create=False):
     """ Decorator that expects a configuration file in an S3 Bucket specified by the 'CONFIG'
     environment variable and S3 Bucket Key (path) specified by config_file. If create=True, this
@@ -296,31 +326,27 @@ def configuration_aware(config_file, create=False):
         handler (func): a configuration aware lambda handler
     """
     def configuration_handler(handler):
+        config_bucket = os.environ['CONFIG']
+        encrypt_key_arn = os.environ.get('ENCRYPT_KEY_ARN')
 
-        @environ_aware(['CONFIG', 'ENCRYPT_KEY_ARN'], [])
+        conn = conf.conn(encrypt_key_arn)
+        try:
+            settings = conf.load_or_create(conn, config_bucket, config_file) if create else conf.load(conn, config_bucket, config_file)
+        except Exception as err:
+            logger.exception(err)
+            logger.error('Failed to load or create configuration.')
+            return {'statusCode': 503, 'body': 'Failed to load configuration.'}
+
+        configuration = {
+            'load': lambda: settings if settings else {},
+            'save': functools.partial(conf.save, conn, config_bucket, config_file),
+        }
+
         def handler_wrapper(event, context, **kwargs):
-            try:
-                logger.debug('Loading CONFIG')
-                conn = conf.conn(kwargs['ENCRYPT_KEY_ARN'])
-                conf.load(conn, kwargs['CONFIG'], config_file)
-            except Exception as error:
-                logger.debug('Could not load CONFIG')
-                if create:
-                    logger.debug('... but can try to create!')
-                    try:
-                        conf.save(conn, kwargs['CONFIG'], config_file, {})
-                        logger.debug('Created empty CONFIG')
-                    except Exception as error:
-                        return {'statusCode': 503, 'body': f"Could not create configuration file ({error})"}
-                else:
-                    return {'statusCode': 503, 'body': f"Could not read configuration file ({error})"}
-            kwargs['configuration'] = {
-                'load': functools.partial(conf.load, conn, kwargs['CONFIG'], config_file),
-                'save': functools.partial(conf.save, conn, kwargs['CONFIG'], config_file),
+            return handler(event, context, configuration=configuration, **kwargs)
 
-            }
-            return handler(event, context, **kwargs)
         return handler_wrapper
+
     return configuration_handler
 
 
@@ -338,6 +364,22 @@ def client_config_aware(handler):
         logger.info(f"{handler.__name__} | {client_details}")
         logger.debug(f'aws_lambda_wrapper| {event}')
         kwargs['client_details'] = client_details
+        return handler(event, context, **kwargs)
+    return handler_wrapper
+
+
+def region_aware(handler):
+    """ Decorator that will find the Account Region in the lambda context.
+
+    Args:
+        handler (func): a handler function with the signature (event, context) -> result
+
+    Returns:
+        handler (func): a region aware lambda handler
+    """
+    def handler_wrapper(event, context, **kwargs):
+        region = tools.get_region(context)
+        kwargs['region'] = region
         return handler(event, context, **kwargs)
     return handler_wrapper
 
@@ -375,7 +417,7 @@ def default():
         @account_id_aware
         @client_config_aware
         @configuration_aware('configuration.json', True)
-        @namespace_aware
+        @environ_aware(['NAMESPACE', 'CONFIG'], ['ENCRYPT_KEY_ARN'])
         @pingable
         @pausable
         def handler_wrapper(event, context, **kwargs):

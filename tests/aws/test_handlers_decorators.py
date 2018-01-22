@@ -13,6 +13,8 @@ import simplejson as json
 import pyfaaster.aws.handlers_decorators as decs
 import pyfaaster.aws.utils as utils
 
+_CONFIG_BUCKET = 'example_config_bucket'
+
 
 @pytest.fixture(scope='function')
 def context(mocker):
@@ -20,7 +22,7 @@ def context(mocker):
 
     orig_env = os.environ.copy()
     os.environ['NAMESPACE'] = 'test-ns'
-    os.environ['CONFIG'] = 'config_bucket'
+    os.environ['CONFIG'] = _CONFIG_BUCKET
     os.environ['ENCRYPT_KEY_ARN'] = 'arn'
     context.os = {'environ': os.environ}
 
@@ -32,9 +34,11 @@ def context(mocker):
 def identity_handler(event, context, configuration=None, **kwargs):
     kwargs['configuration'] = configuration['load']() if configuration else None
     response = {
-        'event': event,
-        'context': context,
-        'kwargs': kwargs,
+        'body': {
+            'event': event,
+            'context': context,
+            'kwargs': kwargs,
+        },
     }
     return response
 
@@ -54,8 +58,8 @@ def test_environ_aware_opts():
     handler = decs.environ_aware([], ['NAMESPACE', 'FOO'])(identity_handler)
 
     response = handler(event, None)
-    assert utils.deep_get(response, 'kwargs', 'NAMESPACE') == utils.deep_get(context, 'os', 'environ', 'NAMESPACE')
-    assert not utils.deep_get(response, 'kwargs', 'FOO')
+    assert utils.deep_get(response, 'body', 'kwargs', 'NAMESPACE') == utils.deep_get(context, 'os', 'environ', 'NAMESPACE')
+    assert not utils.deep_get(response, 'body', 'kwargs', 'FOO')
 
 
 @pytest.mark.unit
@@ -71,7 +75,7 @@ def test_domain_aware():
     handler = decs.domain_aware(identity_handler)
 
     response = handler(event, None)
-    assert utils.deep_get(response, 'kwargs', 'domain') == domain
+    assert utils.deep_get(response, 'body', 'kwargs', 'domain') == domain
 
 
 @pytest.mark.unit
@@ -89,7 +93,7 @@ def test_namespace_aware(context):
     handler = decs.namespace_aware(identity_handler)
 
     response = handler(event, None)
-    assert utils.deep_get(response, 'kwargs', 'NAMESPACE') == utils.deep_get(context, 'os', 'environ', 'NAMESPACE')
+    assert utils.deep_get(response, 'body', 'kwargs', 'NAMESPACE') == utils.deep_get(context, 'os', 'environ', 'NAMESPACE')
 
 
 @pytest.mark.unit
@@ -110,10 +114,10 @@ def test_cors_origin_ok(context):
                 'origin': origin
             }
         }
-        handler = decs.ok_cors_origin('.*\.cloudzero\.com')(identity_handler)
+        handler = decs.allow_origin_response('.*\.cloudzero\.com')(identity_handler)
 
         response = handler(event, None)
-        assert utils.deep_get(response, 'kwargs', 'request_origin') == origin
+        assert utils.deep_get(response, 'body', 'kwargs', 'request_origin') == origin
         assert utils.deep_get(response, 'headers', 'Access-Control-Allow-Origin') == origin
         assert utils.deep_get(response, 'headers', 'Access-Control-Allow-Credentials') == 'true'
 
@@ -127,10 +131,10 @@ def test_cors_origin_not_case_sensitive(context):
                 'Origin': origin  # CloudFront often rewrites headers and may assign different case like this
             }
         }
-        handler = decs.ok_cors_origin('.*\.cloudzero\.com')(identity_handler)
+        handler = decs.allow_origin_response('.*\.cloudzero\.com')(identity_handler)
 
         response = handler(event, None)
-        assert utils.deep_get(response, 'kwargs', 'request_origin') == origin
+        assert utils.deep_get(response, 'body', 'kwargs', 'request_origin') == origin
         assert utils.deep_get(response, 'headers', 'Access-Control-Allow-Origin') == origin
         assert utils.deep_get(response, 'headers', 'Access-Control-Allow-Credentials') == 'true'
 
@@ -143,7 +147,7 @@ def test_cors_origin_bad():
             'origin': origin
         }
     }
-    handler = decs.ok_cors_origin('.*\.cloudzero\.com')(identity_handler)
+    handler = decs.allow_origin_response('.*\.cloudzero\.com')(identity_handler)
 
     response = handler(event, None)
     assert response.get('statusCode') == 403
@@ -156,7 +160,7 @@ def test_parameters():
     handler = decs.parameters(*params.keys())(identity_handler)
 
     response = handler(event, None)
-    response_kwargs = utils.deep_get(response, 'kwargs')
+    response_kwargs = utils.deep_get(response, 'body', 'kwargs')
     assert all([k in response_kwargs for k in params])
 
 
@@ -177,7 +181,7 @@ def test_body():
     handler = decs.body(*body.keys())(identity_handler)
 
     response = handler(event, None)
-    kwargs_body = utils.deep_get(response, 'kwargs', 'body')
+    kwargs_body = utils.deep_get(response, 'body', 'kwargs', 'body')
     assert all([k in kwargs_body for k in body])
 
 
@@ -214,7 +218,7 @@ def test_sub_aware():
     handler = decs.sub_aware(identity_handler)
 
     response = handler(event, None)
-    assert utils.deep_get(response, 'kwargs', 'sub') == utils.deep_get(event, 'requestContext', 'authorizer', 'sub')
+    assert utils.deep_get(response, 'body', 'kwargs', 'sub') == utils.deep_get(event, 'requestContext', 'authorizer', 'sub')
 
 
 @pytest.mark.unit
@@ -234,7 +238,9 @@ def test_sub_aware_none():
 @pytest.mark.unit
 def test_apig_response():
     event = {'foo': 'bar'}
+
     handler = decs.apig_response(identity_handler)
+
     response = handler(event, None)
     assert response['statusCode'] == 200
     assert json.loads(response['body'])['event'] == event
@@ -261,7 +267,7 @@ def test_scopes():
     handler = decs.scopes('read', 'write')(identity_handler)
 
     response = handler(event, None)
-    assert response['event'] == event
+    assert response['body']['event'] == event
 
 
 @pytest.mark.unit
@@ -292,7 +298,7 @@ def test_no_scopes():
     handler = decs.scopes()(identity_handler)
 
     response = handler(event, None)
-    assert response['event'] == event
+    assert response['body']['event'] == event
 
 
 @pytest.mark.unit
@@ -316,6 +322,46 @@ class MockContext(dict):
         dict.__init__(self, invoked_function_arn=farn)
 
 
+def test_apig_cors_composition(context):
+
+    @decs.allow_origin_response('.*')
+    @decs.apig_response
+    def cors_first(e, c, **ks):
+        return {}
+
+    @decs.apig_response
+    @decs.allow_origin_response('.*')
+    def apig_first(e, c, **ks):
+        return {}
+
+    assert cors_first({}, None) == apig_first({}, None)
+
+
+@pytest.mark.integration
+@moto.mock_sts
+@moto.mock_sns
+def test_publisher(context):
+    event = {}
+    lambda_context = MockContext('arn:aws:lambda:us-east-1:123456789012')
+
+    messages = {
+        'topic-1': 'foo',
+        'topic-2': 'bar',
+    }
+    created_arns = [boto3.client('sns').create_topic(Name=name)['TopicArn'] for name in messages.keys()]
+
+    assert len(created_arns) == 2
+
+    @decs.publisher
+    def handler(event, context, **kwargs):
+        return {
+            'messages': messages
+        }
+
+    response = handler(event, lambda_context)
+    assert response['messages'] == messages
+
+
 @pytest.mark.integration
 @moto.mock_s3
 @moto.mock_kms
@@ -324,13 +370,14 @@ def test_default(context):
     event = {}
     lambda_context = MockContext('::::arn')
 
-    handler = decs.default()(identity_handler)
+    boto3.client('s3').create_bucket(Bucket=_CONFIG_BUCKET)
 
-    boto3.client('s3').create_bucket(Bucket=utils.deep_get(context, 'os', 'environ', 'CONFIG'))
+    handler = decs.default()(identity_handler)
 
     response = handler(event, lambda_context)
     assert response['statusCode'] == 200
     response_body = json.loads(response['body'])
     assert response_body['event'] == event
     keys = ['account_id', 'client_details', 'CONFIG', 'configuration', 'NAMESPACE']
+    print(response_body['kwargs'])
     assert all(k in response_body['kwargs'] for k in keys)

@@ -74,6 +74,14 @@ clean-pyc:                               ## rms pyc, pyo, *~, and __pycache__
 	find . -name '__pycache__' -exec rm -fr {} +
 
 
+build: test                              ## builds sdist bdist_wheel
+	./setup.py sdist bdist_wheel --universal
+
+
+upload: build                            ## twine uploads dist/*
+	twine upload dist/*
+
+
 #################
 #
 # Serverless Framework Targets

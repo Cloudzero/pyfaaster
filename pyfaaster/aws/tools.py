@@ -66,6 +66,20 @@ def get_account_id(context):
     return str(context.invoked_function_arn.split(":")[4])
 
 
+def get_region(context):
+    """
+    Return the AWS account region for the executing lambda function.
+
+    Args:
+        context: AWS lambda Context Object http://docs.aws.amazon.com/lambda/latest/dg/python-context-object.html
+
+    Returns:
+        str : AWS Account Region
+
+    """
+    return str(context.invoked_function_arn.split(":")[3])
+
+
 def get_client_details(event):
     headers = event.get('headers')
     try:
