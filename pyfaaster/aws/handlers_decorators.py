@@ -14,7 +14,7 @@ import pyfaaster.aws.tools as tools
 import pyfaaster.aws.utils as utils
 
 
-logger = tools.setup_logging('serverless')
+logger = tools.setup_logging('pyfaaster')
 
 
 def environ_aware(reqs, opts):
@@ -238,7 +238,7 @@ def apig_response(handler):
             return {
                 'headers': res.get('headers', {}),
                 'statusCode': res.get('statusCode', 200),
-                'body': json.dumps(res['body']) if 'body' in res else '',
+                'body': json.dumps(res['body']) if 'body' in res else None,
             }
         except Exception as err:
             logger.exception(err)
@@ -409,7 +409,7 @@ def default():
         The wrapped lambda function or JSON response function when an error occurs.  When called,
         this wrapped function will return the appropriate output
     """
-    logger = tools.setup_logging('serverless')
+    logger = tools.setup_logging('pyfaaster')
 
     def default_handler(handler):
 

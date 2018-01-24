@@ -7,7 +7,7 @@ import simplejson as json
 
 import pyfaaster.aws.tools as tools
 
-logger = tools.setup_logging('serverless')
+logger = tools.setup_logging('pyfaaster')
 
 
 def publish(conn, messages):
