@@ -218,7 +218,7 @@ def sub_aware(handler):
     return handler_wrapper
 
 
-def apig_response(handler):
+def http_response(handler):
     """ Decorator that will wrap handler response in an API Gateway compatible dict with
     statusCode and json serialized body. If handler result has a 'body', this decorator
     will serialize it into the API Gateway body; if the handler result does _not_ have a
@@ -228,7 +228,7 @@ def apig_response(handler):
         handler (func): a handler function with the signature (event, context) -> result
 
     Returns:
-        handler (func): a lambda handler function that whose result is APIGateway compatible.
+        handler (func): a lambda handler function that whose result is HTTPateway compatible.
     """
     def handler_wrapper(event, context, **kwargs):
         try:
@@ -294,6 +294,13 @@ def publisher(handler):
     key is Topic Name or ARN and value is the message to be sent. It will publish each message to
     its respective Topic.
 
+    For example:
+
+    response['messages'] = {
+        'topic-1': 'string message',
+        'topic-2': {'dictionary': 'message'},
+    }
+
     Args:
         handler (func): lambda handler whose result will be checked for messages to publish
 
@@ -338,7 +345,7 @@ def configuration_aware(config_file, create=False):
             return {'statusCode': 503, 'body': 'Failed to load configuration.'}
 
         configuration = {
-            'load': lambda: settings if settings else {},
+            'load': lambda: settings or {},
             'save': functools.partial(conf.save, conn, config_bucket, config_file),
         }
 
@@ -409,11 +416,10 @@ def default():
         The wrapped lambda function or JSON response function when an error occurs.  When called,
         this wrapped function will return the appropriate output
     """
-    logger = tools.setup_logging('pyfaaster')
 
     def default_handler(handler):
 
-        @apig_response
+        @http_response
         @account_id_aware
         @client_config_aware
         @configuration_aware('configuration.json', True)

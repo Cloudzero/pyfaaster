@@ -236,10 +236,10 @@ def test_sub_aware_none():
 
 
 @pytest.mark.unit
-def test_apig_response():
+def test_http_response():
     event = {'foo': 'bar'}
 
-    handler = decs.apig_response(identity_handler)
+    handler = decs.http_response(identity_handler)
 
     response = handler(event, None)
     assert response['statusCode'] == 200
@@ -247,9 +247,9 @@ def test_apig_response():
 
 
 @pytest.mark.unit
-def test_apig_response_with_statusCode():
+def test_http_response_with_statusCode():
     event = {'foo': 'bar'}
-    handler = decs.apig_response(lambda e, c, **kwargs: {'statusCode': 500, 'body': event})
+    handler = decs.http_response(lambda e, c, **kwargs: {'statusCode': 500, 'body': event})
     response = handler(event, None)
     assert response['statusCode'] == 500
     assert json.loads(response['body']) == event
@@ -322,22 +322,22 @@ class MockContext(dict):
         dict.__init__(self, invoked_function_arn=farn)
 
 
-def test_apig_cors_composition(context):
+def test_http_cors_composition(context):
 
     @decs.allow_origin_response('.*')
-    @decs.apig_response
+    @decs.http_response
     def cors_first(e, c, **ks):
         return {}
 
-    @decs.apig_response
+    @decs.http_response
     @decs.allow_origin_response('.*')
-    def apig_first(e, c, **ks):
+    def http_first(e, c, **ks):
         return {}
 
-    assert cors_first({}, None) == apig_first({}, None)
+    assert cors_first({}, None) == http_first({}, None)
 
 
-@pytest.mark.integration
+@pytest.mark.unit
 @moto.mock_sts
 @moto.mock_sns
 def test_publisher(context):
@@ -362,7 +362,7 @@ def test_publisher(context):
     assert response['messages'] == messages
 
 
-@pytest.mark.integration
+@pytest.mark.unit
 @moto.mock_s3
 @moto.mock_kms
 @moto.mock_sts

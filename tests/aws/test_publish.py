@@ -9,7 +9,7 @@ import pytest
 import pyfaaster.aws.publish as pub
 
 
-@pytest.mark.integration
+@pytest.mark.unit
 @moto.mock_sns
 @moto.mock_sts
 def test_publish():

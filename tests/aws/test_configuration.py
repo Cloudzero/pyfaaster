@@ -9,7 +9,7 @@ import pytest
 import pyfaaster.aws.configuration as conf
 
 
-@pytest.mark.integration
+@pytest.mark.unit
 @moto.mock_s3
 @moto.mock_kms
 @moto.mock_sts
@@ -34,7 +34,7 @@ def test_configuration():
     assert loaded_settings == settings
 
 
-@pytest.mark.integration
+@pytest.mark.unit
 @moto.mock_s3
 @moto.mock_kms
 @moto.mock_sts
