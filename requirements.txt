@@ -2,6 +2,6 @@
 # Unauthorized copying of this file and/or project, via any medium is strictly prohibited.
 # Direct all questions to legal@cloudzero.com
 
-boto3==1.5.7
-botocore==1.8.21
+boto3==1.5.20
+botocore==1.8.34
 simplejson==3.11.1

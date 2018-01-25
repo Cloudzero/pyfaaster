@@ -19,13 +19,10 @@ def test_configuration():
     file_name = 'conf.json'
     conn = conf.conn(encrypt_key_arn)
 
-    conn['s3_client'].create_bucket(Bucket=bucket_name)
+    conn['session'].client('s3').create_bucket(Bucket=bucket_name)
 
     settings = {
-        'setting_1': {
-            'value': 'foo',
-            'encrypted': False,
-        },
+        'setting_1': 'foo',
     }
     saved_settings = conf.save(conn, bucket_name, file_name, settings)
 
@@ -38,22 +35,26 @@ def test_configuration():
 @moto.mock_s3
 @moto.mock_kms
 @moto.mock_sts
-def test_configuration_encrypted():
+def test_read_only():
     encrypt_key_arn = 'arn:aws:kms:region:account_id:key/guid'
     bucket_name = 'bucket'
     file_name = 'conf.json'
     conn = conf.conn(encrypt_key_arn)
 
-    conn['s3_client'].create_bucket(Bucket=bucket_name)
+    conn['session'].client('s3').create_bucket(Bucket=bucket_name)
 
     settings = {
-        'setting_1': {
-            'value': 'foo',
-            'encrypted': True,
-        },
+        'setting_1': 'foo',
     }
     saved_settings = conf.save(conn, bucket_name, file_name, settings)
 
-    loaded_settings = conf.load(conn, bucket_name, file_name)
-    assert saved_settings != settings
+    loaded_settings = conf.read_only(bucket_name, file_name)
+
+    N = 10
+    for i in range(N):
+        conf.read_only(bucket_name, file_name)
+
+    assert conf.read_only.cache_info().misses == 1
+    assert conf.read_only.cache_info().hits == N
+    assert saved_settings == settings
     assert loaded_settings == settings
