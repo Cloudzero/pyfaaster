@@ -238,7 +238,7 @@ def http_response(handler):
             return {
                 'headers': res.get('headers', {}),
                 'statusCode': res.get('statusCode', 200),
-                'body': json.dumps(res['body']) if 'body' in res else None,
+                'body': json.dumps(res['body'], iterable_as_array=True, sort_keys=True) if 'body' in res else None,
             }
         except Exception as err:
             logger.exception(err)

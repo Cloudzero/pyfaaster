@@ -247,12 +247,23 @@ def test_http_response():
 
 
 @pytest.mark.unit
-def test_http_response_with_statusCode():
+def test_http_response_with_status_code():
     event = {'foo': 'bar'}
     handler = decs.http_response(lambda e, c, **kwargs: {'statusCode': 500, 'body': event})
     response = handler(event, None)
     assert response['statusCode'] == 500
     assert json.loads(response['body']) == event
+
+
+@pytest.mark.unit
+def test_http_response_with_complex_body():
+    # When going to/from JSON, we lose some type information
+    actual_event = {'a': 1, 'b': {'m', 'n', 'o'}, 'c': {'z': 0}, 'd': [1, '2', True]}
+    expected_event = {'a': 1, 'b': ['m', 'n', 'o'], 'c': {'z': 0}, 'd': [1, '2', True]}
+    handler = decs.http_response(lambda e, c, **kwargs: {'statusCode': 200, 'body': actual_event})
+    response = handler(actual_event, None)
+    assert response['statusCode'] == 200
+    assert json.loads(response['body']) == expected_event
 
 
 @pytest.mark.unit
