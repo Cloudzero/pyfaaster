@@ -87,7 +87,7 @@ check-version:													 ## check that version pyfaaster/__version__ is not i
 		|| { printf "$(INFO_COLOR)OK$(NO_COLOR): Version $(INFO_COLOR)$${version}$(NO_COLOR) is available in pypi.\n" ; }
 
 
-upload: build                            ## twine uploads dist/*
+upload: build check-version              ## twine uploads dist/*
 	twine upload dist/*
 
 
