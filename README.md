@@ -1,5 +1,7 @@
 # pyfaaster
 
+[![Build Status](https://semaphoreci.com/api/v1/projects/0234f02a-6a7c-443d-ac66-7c2a17c1922a/1756352/badge.svg)](https://semaphoreci.com/cloudzero/pyfaaster)
+
 Useful Utilities for Python Functions as a Service (starting with AWS Lambda).
 
 ## Problem
