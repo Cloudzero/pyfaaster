@@ -61,7 +61,7 @@ Sigh, you have to manually convert your lambda return values to API Gateway's ex
 ```
 import pyfaaster as faas
 
-@faas.http_response
+@faas.http_response(default_error_message='Failed to handle something.")
 def handler(event, context, **kwargs):
     return { 'my': 'important', 'json': 'data'} # <- will end up as the json serialized `body` in an API Gateway compatible dict with statusCode.
 ```
