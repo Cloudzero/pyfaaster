@@ -299,7 +299,7 @@ def test_http_response_with_computed_default_error_message():
     handler = http_response_handler(lambda e, c, **kwargs: 1 / 0)
     response = handler(input_event, MockContext('arn', function_name=function_name))
 
-    assert function_name.split('.')[-1].replace('_', ' ') in response['body']
+    assert 'my func' in response['body']
     assert response['statusCode'] == 500
 
 

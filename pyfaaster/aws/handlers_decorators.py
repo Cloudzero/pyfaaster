@@ -249,10 +249,10 @@ def http_response(default_error_message=None):
                 }
             except Exception as err:
                 logger.exception(err)
-                function_name = context.function_name.split('.')[-1].replace('_', ' ')
+                lambda_function_name = context.function_name.split('.')[-1].replace('_', ' ')
                 return {
                     'statusCode': 500,
-                    'body': default_error_message or f'Failed to {function_name}.',
+                    'body': default_error_message or f'Failed to {lambda_function_name}.',
                 }
 
         return handler_wrapper
