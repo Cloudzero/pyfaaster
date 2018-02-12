@@ -9,6 +9,7 @@ import os
 import simplejson as json
 
 import pyfaaster.aws.configuration as conf
+from pyfaaster.aws.exceptions import HTTPResponseException
 import pyfaaster.aws.publish as publish
 import pyfaaster.aws.tools as tools
 import pyfaaster.aws.utils as utils
@@ -218,7 +219,7 @@ def sub_aware(handler):
     return handler_wrapper
 
 
-def http_response(handler):
+def http_response(default_error_message=None):
     """ Decorator that will wrap handler response in an API Gateway compatible dict with
     statusCode and json serialized body. If handler result has a 'body', this decorator
     will serialize it into the API Gateway body; if the handler result does _not_ have a
@@ -230,24 +231,32 @@ def http_response(handler):
     Returns:
         handler (func): a lambda handler function that whose result is HTTPateway compatible.
     """
-    def handler_wrapper(event, context, **kwargs):
-        try:
-            res = handler(event, context, **kwargs)
-            if not isinstance(res, dict):
-                raise Exception(f'Unsupported return type {type(res)}; response must be dict.')
-            return {
-                'headers': res.get('headers', {}),
-                'statusCode': res.get('statusCode', 200),
-                'body': json.dumps(res['body'], iterable_as_array=True) if 'body' in res else None,
-            }
-        except Exception as err:
-            logger.exception(err)
-            return {
-                'statusCode': 500,
-                'body': f'Failed to {handler.__name__.replace("_", " ")}',
-            }
+    def http_response_handler(handler):
+        def handler_wrapper(event, context, **kwargs):
+            try:
+                res = handler(event, context, **kwargs)
+                if not isinstance(res, dict):
+                    raise Exception(f'Unsupported return type {type(res)}; response must be dict.')
+                return {
+                    'headers': res.get('headers', {}),
+                    'statusCode': res.get('statusCode', 200),
+                    'body': json.dumps(res['body'], iterable_as_array=True) if 'body' in res else None,
+                }
+            except HTTPResponseException as err:
+                return {
+                    'statusCode': 500,
+                    'body': json.dumps(err.body),
+                }
+            except Exception as err:
+                logger.exception(err)
+                function_name = context.function_name.split('.')[-1].replace('_', ' ')
+                return {
+                    'statusCode': 500,
+                    'body': default_error_message or f'Failed to {function_name}.',
+                }
 
-    return handler_wrapper
+        return handler_wrapper
+    return http_response_handler
 
 
 def pausable(handler):
@@ -407,7 +416,7 @@ def account_id_aware(handler):
     return handler_wrapper
 
 
-def default():
+def default(default_error_message=None):
     """
     AWS lambda handler handler. A wrapper with standard boilerplate implementing the
     best practices we've developed
@@ -419,7 +428,7 @@ def default():
 
     def default_handler(handler):
 
-        @http_response
+        @http_response(default_error_message)
         @account_id_aware
         @client_config_aware
         @configuration_aware('configuration.json', True)

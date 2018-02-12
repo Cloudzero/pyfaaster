@@ -10,10 +10,18 @@ import os
 import pytest
 import simplejson as json
 
+from pyfaaster.aws.exceptions import HTTPResponseException
 import pyfaaster.aws.handlers_decorators as decs
 import pyfaaster.aws.utils as utils
 
 _CONFIG_BUCKET = 'example_config_bucket'
+
+
+class MockContext(dict):
+    def __init__(self, farn, function_name=None):
+        self.invoked_function_arn = farn
+        self.function_name = function_name
+        dict.__init__(self, invoked_function_arn=farn, function_name=function_name)
 
 
 @pytest.fixture(scope='function')
@@ -239,7 +247,7 @@ def test_sub_aware_none():
 def test_http_response():
     event = {'foo': 'bar'}
 
-    handler = decs.http_response(identity_handler)
+    handler = decs.http_response()(identity_handler)
 
     response = handler(event, None)
     assert response['statusCode'] == 200
@@ -249,7 +257,7 @@ def test_http_response():
 @pytest.mark.unit
 def test_http_response_with_status_code():
     event = {'foo': 'bar'}
-    handler = decs.http_response(lambda e, c, **kwargs: {'statusCode': 500, 'body': event})
+    handler = decs.http_response()(lambda e, c, **kwargs: {'statusCode': 500, 'body': event})
     response = handler(event, None)
     assert response['statusCode'] == 500
     assert json.loads(response['body']) == event
@@ -258,7 +266,7 @@ def test_http_response_with_status_code():
 @pytest.mark.unit
 def test_http_response_with_complex_body():
     input_event = {'a': 1, 'b': {'m', 'n', 'o'}, 'c': {'z': 0}, 'd': [1, '2', True]}
-    handler = decs.http_response(lambda e, c, **kwargs: {'statusCode': 200, 'body': input_event})
+    handler = decs.http_response()(lambda e, c, **kwargs: {'statusCode': 200, 'body': input_event})
     response = handler(input_event, None)
     expected_output = {'a': 1, 'b': ['m', 'n', 'o'], 'c': {'z': 0}, 'd': [1, '2', True]}
     actual_output = json.loads(response['body'])
@@ -267,6 +275,49 @@ def test_http_response_with_complex_body():
     actual_output['b'] = sorted(actual_output['b'])
     assert actual_output == expected_output
     assert response['statusCode'] == 200
+
+
+@pytest.mark.unit
+def test_http_response_with_default_error_message():
+    input_event = {}
+    default_error_message = 'Blarg'
+    http_response_handler = decs.http_response(default_error_message=default_error_message)
+    # lambda w/ *any* exception
+    handler = http_response_handler(lambda e, c, **kwargs: 1 / 0)
+    response = handler(input_event, MockContext('arn', function_name='foo.my_func'))
+
+    assert response['body'] == default_error_message
+    assert response['statusCode'] == 500
+
+
+@pytest.mark.unit
+def test_http_response_with_computed_default_error_message():
+    input_event = {}
+    function_name = 'foo.my_func'
+    http_response_handler = decs.http_response()
+    # lambda w/ *any* exception
+    handler = http_response_handler(lambda e, c, **kwargs: 1 / 0)
+    response = handler(input_event, MockContext('arn', function_name=function_name))
+
+    assert function_name.split('.')[-1].replace('_', ' ') in response['body']
+    assert response['statusCode'] == 500
+
+
+@pytest.mark.unit
+def test_http_response_with_HTTPResponseException():
+    input_event = {}
+    expected_body = {'some': 'error'}
+
+    def http_exception_handler(e, c, **kwargs):
+        raise HTTPResponseException(body=expected_body)
+
+    # lambda w/ HTTPResponseException
+    handler = decs.http_response()(http_exception_handler)
+    response = handler(input_event, None)
+    actual_output = json.loads(response['body'])
+
+    assert actual_output == expected_body
+    assert response['statusCode'] == 500
 
 
 @pytest.mark.unit
@@ -328,12 +379,6 @@ def test_no_scopes_in_context():
     response = handler(event, None)
     assert response['statusCode'] == 500
     assert 'missing' in response['body']
-
-
-class MockContext(dict):
-    def __init__(self, farn):
-        self.invoked_function_arn = farn
-        dict.__init__(self, invoked_function_arn=farn)
 
 
 def test_http_cors_composition(context):
