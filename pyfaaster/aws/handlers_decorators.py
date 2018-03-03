@@ -229,7 +229,7 @@ def http_response(default_error_message=None):
         handler (func): a handler function with the signature (event, context) -> result
 
     Returns:
-        handler (func): a lambda handler function that whose result is HTTPateway compatible.
+        handler (func): a lambda handler function that whose result is HTTPGateway compatible.
     """
     def http_response_handler(handler):
         def handler_wrapper(event, context, **kwargs):
