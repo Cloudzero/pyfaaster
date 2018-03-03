@@ -81,7 +81,7 @@ build: test                              ## builds sdist bdist_wheel
 check-version:													 ## check that version pyfaaster/__version__ is not in pypi
 	@version=$$(awk '/version/{print $$NF}' pyfaaster/__version__.py |  tr -d "'") ; \
 	 http --print=h GET "https://pypi.python.org/pypi?:action=display&name=pyfaaster&version=$${version}" | \
-		grep 200 \
+		grep "200 OK" \
 		&& { printf "$(ERROR_COLOR)ERROR$(NO_COLOR): Version $(WARN_COLOR)$${version}$(NO_COLOR) already exists in pypi!\n" ; \
 				 printf "You probably forgot to update $(WARN_COLOR)pyfaaster/__version__.py$(NO_COLOR). Go do that now.\n" ; exit 1 ; } \
 		|| { printf "$(INFO_COLOR)OK$(NO_COLOR): Version $(INFO_COLOR)$${version}$(NO_COLOR) is available in pypi.\n" ; }
