@@ -381,14 +381,15 @@ def test_no_scopes_in_context():
     assert 'missing' in response['body']
 
 
+@pytest.mark.unit
 def test_http_cors_composition(context):
 
     @decs.allow_origin_response('.*')
-    @decs.http_response
+    @decs.http_response()
     def cors_first(e, c, **ks):
         return {}
 
-    @decs.http_response
+    @decs.http_response()
     @decs.allow_origin_response('.*')
     def http_first(e, c, **ks):
         return {}
