@@ -434,7 +434,6 @@ def default(default_error_message=None):
         @configuration_aware('configuration.json', True)
         @environ_aware(['NAMESPACE', 'CONFIG'], ['ENCRYPT_KEY_ARN'])
         @pingable
-        @pausable
         def handler_wrapper(event, context, **kwargs):
             try:
                 return handler(event, context, **kwargs)
