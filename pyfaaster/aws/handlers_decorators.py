@@ -18,28 +18,28 @@ import pyfaaster.aws.utils as utils
 logger = tools.setup_logging('pyfaaster')
 
 
-def environ_aware(reqs, opts):
+def environ_aware(required=None, optional=None, **kwargs):
     """ Decorator that will add each environment variable in reqs and opts
     to the handler kwargs. The variables in reqs will be checked for existence
     and return immediately if the environmental variable is missing.
 
     Args:
-        reqs (list): list of required environment vars
-        opts (list): list of optional environment vars
+        required (iterable): required environment vars
+        optional (iterable): optional environment vars
 
     Returns:
         handler (func): a lambda handler function that is environ aware
     """
     def environ_handler(handler):
         def handler_wrapper(event, context, **kwargs):
-            for r in reqs:
+            for r in required if required else []:
                 value = os.environ.get(r)
                 if not value:
                     logger.error(f'{r} environment variable missing.')
                     return {'statusCode': 500, 'body': f'Invalid {r}.'}
                 kwargs[r] = value
 
-            for o in opts if opts else []:
+            for o in optional if optional else []:
                 kwargs[o] = os.environ.get(o)
 
             return handler(event, context, **kwargs)

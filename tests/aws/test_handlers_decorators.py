@@ -53,7 +53,7 @@ def identity_handler(event, context, configuration=None, **kwargs):
 
 @pytest.mark.unit
 def test_environ_aware_named_kwargs(context):
-    @decs.environ_aware(['NAMESPACE'], [])
+    @decs.environ_aware(required=['NAMESPACE'], optional=[])
     def handler(e, c, NAMESPACE=None):
         assert NAMESPACE == utils.deep_get(context, 'os', 'environ', 'NAMESPACE')
 
@@ -63,7 +63,7 @@ def test_environ_aware_named_kwargs(context):
 @pytest.mark.unit
 def test_environ_aware_opts():
     event = {}
-    handler = decs.environ_aware([], ['NAMESPACE', 'FOO'])(identity_handler)
+    handler = decs.environ_aware(required=[], optional=['NAMESPACE', 'FOO'])(identity_handler)
 
     response = handler(event, None)
     assert utils.deep_get(response, 'body', 'kwargs', 'NAMESPACE') == utils.deep_get(context, 'os', 'environ', 'NAMESPACE')
