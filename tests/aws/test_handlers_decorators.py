@@ -66,7 +66,8 @@ def test_environ_aware_opts():
     handler = decs.environ_aware(required=[], optional=['NAMESPACE', 'FOO'])(identity_handler)
 
     response = handler(event, None)
-    assert utils.deep_get(response, 'body', 'kwargs', 'NAMESPACE') == utils.deep_get(context, 'os', 'environ', 'NAMESPACE')
+    assert utils.deep_get(response, 'body', 'kwargs', 'NAMESPACE') == utils.deep_get(
+        context, 'os', 'environ', 'NAMESPACE')
     assert not utils.deep_get(response, 'body', 'kwargs', 'FOO')
 
 
@@ -101,7 +102,8 @@ def test_namespace_aware(context):
     handler = decs.namespace_aware(identity_handler)
 
     response = handler(event, None)
-    assert utils.deep_get(response, 'body', 'kwargs', 'NAMESPACE') == utils.deep_get(context, 'os', 'environ', 'NAMESPACE')
+    assert utils.deep_get(response, 'body', 'kwargs', 'NAMESPACE') == utils.deep_get(
+        context, 'os', 'environ', 'NAMESPACE')
 
 
 @pytest.mark.unit
@@ -302,7 +304,8 @@ def test_sub_aware():
     handler = decs.sub_aware(identity_handler)
 
     response = handler(event, None)
-    assert utils.deep_get(response, 'body', 'kwargs', 'sub') == utils.deep_get(event, 'requestContext', 'authorizer', 'sub')
+    assert utils.deep_get(response, 'body', 'kwargs', 'sub') == utils.deep_get(
+        event, 'requestContext', 'authorizer', 'sub')
 
 
 @pytest.mark.unit

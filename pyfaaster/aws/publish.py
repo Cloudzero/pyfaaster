@@ -16,10 +16,11 @@ def publish(conn, messages):
 
     published_messages = []
     for topic, message in messages.items():
-        topic_arn = topic.format(namespace=conn['namespace']) if 'arn:aws:sns' in topic else conn['topic_arn_prefix'] + topic.format(namespace=conn['namespace'])
+        topic_arn = topic.format(
+            namespace=conn['namespace']) if 'arn:aws:sns' in topic else conn['topic_arn_prefix'] + topic.format(namespace=conn['namespace'])
         message = messages[topic]
         if getattr(message, 'get', None) and not message.get('timestamp'):
-            message['timestamp'] =  str(dt.datetime.now(tz=dt.timezone.utc))
+            message['timestamp'] = str(dt.datetime.now(tz=dt.timezone.utc))
         logger.debug(f'Publishing {message} to {topic_arn}')
         conn['sns'].publish(
             TopicArn=topic_arn,

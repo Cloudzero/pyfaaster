@@ -98,7 +98,8 @@ def allow_origin_response(*origins):
             response = handler(event, context, **kwargs)
 
             if not isinstance(response, dict):
-                raise Exception(f'Unsupported response type {type(response)}; response must be dict for *_response decorators.')
+                raise Exception(
+                    f'Unsupported response type {type(response)}; response must be dict for *_response decorators.')
 
             # add origin to response headers
             current_headers = response.get('headers', {})
@@ -364,7 +365,8 @@ def configuration_aware(config_file, create=False):
 
         conn = conf.conn(encrypt_key_arn)
         try:
-            settings = conf.load_or_create(conn, config_bucket, config_file) if create else conf.load(conn, config_bucket, config_file)
+            settings = conf.load_or_create(conn, config_bucket, config_file) if create else conf.load(
+                conn, config_bucket, config_file)
         except Exception as err:
             logger.exception(err)
             logger.error('Failed to load or create configuration.')
