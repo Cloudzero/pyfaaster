@@ -112,23 +112,35 @@ def allow_origin_response(*origins):
     return allow_origin_handler
 
 
-def parameters(*params):
-    """ Decorator that will check and add queryStringParameters to the event kwargs.
+def parameters(required_querystring=None, optional_querystring=None, path=None):
+    """ Decorator that will check and add queryStringParameters
+        and pathParameters to the event kwargs.
 
     Args:
-        params (List): List of required queryStringParameters
+        required_querystring (iterable): Required queryStringParameters
+        optional_querystring (iterable): Optional queryStringParameters
+        path (iterable): pathParameters (these are always required)
 
     Returns:
         handler (func): a lambda handler function that is namespace aware
     """
     def parameters_handler(handler):
         def handler_wrapper(event, context, **kwargs):
-            for param in params:
+            for param in required_querystring if required_querystring else {}:
                 value = utils.deep_get(event, 'queryStringParameters', param)
                 if not value:
                     logger.error(f'queryStringParameter [{param}] missing from event [{event}].')
                     return {'statusCode': 400, 'body': f'Invalid {param}.'}
-
+                kwargs[param] = value
+            for param in optional_querystring if optional_querystring else {}:
+                value = utils.deep_get(event, 'queryStringParameters', param)
+                if value:
+                    kwargs[param] = value
+            for param in path if path else {}:
+                value = utils.deep_get(event, 'pathParameters', param)
+                if not value:
+                    logger.error(f'pathParameter [{param}] missing from event [{event}].')
+                    return {'statusCode': 400, 'body': f'Invalid {param}.'}
                 kwargs[param] = value
             return handler(event, context, **kwargs)
 
@@ -137,30 +149,35 @@ def parameters(*params):
     return parameters_handler
 
 
-def body(*keys):
+def body(required=None, optional=None):
     """ Decorator that will check that event.get('body') has keys, then add a map of selected keys
     to kwargs.
 
     Args:
-        keys (List): List of required event.body keys
+        required (iterable): Required body keys
+        optional (iterable): Optional body keys
 
     Returns:
         handler (func): a lambda handler function that is namespace aware
     """
     def body_handler(handler):
         def handler_wrapper(event, context, **kwargs):
-            event_body = {}
             try:
                 event_body = json.loads(event.get('body'))
             except json.JSONDecodeError as err:
                 return {'statusCode': 400, 'body': 'Invalid event.body: cannot decode json.'}
 
-            handler_body = {k: event_body.get(k) for k in keys}
-            if not all((v is not None for v in handler_body.values())):
-                logger.error(f'There is a required key [{keys}] missing from event.body [{event_body}].')
+            body_required = {k: event_body.get(k) for k in (required if required else {})}
+            if not all((v is not None for v in body_required.values())):
+                logger.error(f'There is a required key in [{required}] missing from event.body [{event_body}].')
                 return {'statusCode': 400, 'body': 'Invalid event.body: missing required key.'}
 
+            body_optional = {k: event_body.get(k) for k in (optional if optional else {})}
+
+            handler_body = {}
+            handler_body.update(**body_required, **body_optional)
             kwargs['body'] = handler_body
+
             return handler(event, context, **kwargs)
 
         return handler_wrapper
