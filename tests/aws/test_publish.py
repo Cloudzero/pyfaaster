@@ -27,5 +27,8 @@ def test_publish():
         arn = conn['sns'].create_topic(Name=topic_name)
         print(f'{topic}: {arn}')
 
-    res = pub.publish(conn, messages)
-    assert res
+    published_messages = pub.publish(conn, messages)
+    assert len(published_messages) == 2
+    assert published_messages[0] == 'String Message'
+    assert published_messages[1].get('message') == 'string'
+    assert published_messages[1].get('timestamp') is not None
