@@ -32,14 +32,14 @@ def environ_aware(required=None, optional=None, **kwargs):
     """
     def environ_handler(handler):
         def handler_wrapper(event, context, **kwargs):
-            for r in required if required else []:
+            for r in required if required else {}:
                 value = os.environ.get(r)
                 if not value:
                     logger.error(f'{r} environment variable missing.')
                     return {'statusCode': 500, 'body': f'Invalid {r}.'}
                 kwargs[r] = value
 
-            for o in optional if optional else []:
+            for o in optional if optional else {}:
                 kwargs[o] = os.environ.get(o)
 
             return handler(event, context, **kwargs)
