@@ -549,7 +549,7 @@ def test_subscriber_required_topic(context):
         ],
     }
 
-    @decs.subscriber(required=['some other name', required_topic_name])
+    @decs.subscriber(required_topics=['some other name', required_topic_name])
     def handler(event, context, message, **kwargs):
         return message
 
@@ -578,7 +578,7 @@ def test_subscriber_message_body_not_json(context):
         ],
     }
 
-    @decs.subscriber(required=['some other name', required_topic_name])
+    @decs.subscriber(required_topics=['some other name', required_topic_name])
     def handler(event, context, message, **kwargs):
         return message
 
