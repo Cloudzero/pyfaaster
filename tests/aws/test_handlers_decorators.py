@@ -588,6 +588,27 @@ def test_subscriber_message_body_not_json(context):
 
 
 @pytest.mark.unit
+def test_subscriber_event_not_sns_format(context):
+    lambda_context = MockContext('arn:aws:lambda:us-east-1:123456789012')
+
+    message = {
+        'foo': 'bar'
+    }
+
+    event = {
+        'message': message
+    }
+
+    @decs.subscriber()
+    def handler(event, context, message, **kwargs):
+        return message
+
+    with pytest.raises(Exception) as err:
+        handler(event, lambda_context)
+    assert 'Unsupported' in str(err.value)
+
+
+@pytest.mark.unit
 @moto.mock_s3
 @moto.mock_kms
 @moto.mock_sts

@@ -347,19 +347,22 @@ def publisher(handler):
     return handler_wrapper
 
 
-def subscriber(required=None):
+def subscriber(required_topics=None):
     """ Decorator that will grab messages from sns location in event body.
 
     Args:
-        required (iterable): Handler must be triggered by one of these Topics
+        required_topics (iterable): Handler must be triggered by one of these Topics
 
     Returns:
         handler (func): a lambda handler function that is namespace aware
     """
     def subscriber_handler(handler):
         def handler_wrapper(event, context, **kwargs):
-            sns = event['Records'][0]['Sns']
-            if required and not any((topic_name in sns['TopicArn'] for topic_name in required)):
+            try:
+                sns = event['Records'][0]['Sns']
+            except Exception:
+                raise Exception('Unsupported event format.')
+            if required_topics and not any((topic_name in sns['TopicArn'] for topic_name in required_topics)):
                 raise Exception('Message received not from expected topic.')
             try:
                 message_body = json.loads(sns.get('Message'))
