@@ -502,6 +502,92 @@ def test_publisher(context):
 
 
 @pytest.mark.unit
+def test_subscriber(context):
+    lambda_context = MockContext('arn:aws:lambda:us-east-1:123456789012')
+
+    message = {
+        'foo': 'bar'
+    }
+
+    event = {
+        'Records': [
+            {
+                'Sns': {
+                    'TopicArn': 'arn:aws:sns:anything',
+                    'Message': json.dumps(message),
+                },
+            },
+        ],
+    }
+
+    @decs.subscriber()
+    def handler(event, context, message, **kwargs):
+        return message
+
+    response = handler(event, lambda_context)
+    assert response == message
+
+
+@pytest.mark.unit
+def test_subscriber_required_topic(context):
+    lambda_context = MockContext('arn:aws:lambda:us-east-1:123456789012')
+
+    message = {
+        'foo': 'bar'
+    }
+
+    required_topic_name = 'must-match'
+
+    event = {
+        'Records': [
+            {
+                'Sns': {
+                    'TopicArn': f'arn:aws:sns:region:account:namespace-{required_topic_name}',
+                    'Message': json.dumps(message),
+                },
+            },
+        ],
+    }
+
+    @decs.subscriber(required=['some other name', required_topic_name])
+    def handler(event, context, message, **kwargs):
+        return message
+
+    response = handler(event, lambda_context)
+    assert response == message
+
+
+@pytest.mark.unit
+def test_subscriber_message_body_not_json(context):
+    lambda_context = MockContext('arn:aws:lambda:us-east-1:123456789012')
+
+    message = {
+        'foo': 'bar'
+    }
+
+    required_topic_name = 'must-match'
+
+    event = {
+        'Records': [
+            {
+                'Sns': {
+                    'TopicArn': f'arn:aws:sns:region:account:namespace-{required_topic_name}',
+                    'Message': message,
+                },
+            },
+        ],
+    }
+
+    @decs.subscriber(required=['some other name', required_topic_name])
+    def handler(event, context, message, **kwargs):
+        return message
+
+    with pytest.raises(Exception) as err:
+        handler(event, lambda_context)
+    assert 'not decode' in str(err.value)
+
+
+@pytest.mark.unit
 @moto.mock_s3
 @moto.mock_kms
 @moto.mock_sts

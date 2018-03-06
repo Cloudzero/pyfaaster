@@ -347,6 +347,34 @@ def publisher(handler):
     return handler_wrapper
 
 
+def subscriber(required=None):
+    """ Decorator that will grab messages from sns location in event body.
+
+    Args:
+        required (iterable): Handler must be triggered by one of these Topics
+
+    Returns:
+        handler (func): a lambda handler function that is namespace aware
+    """
+    def subscriber_handler(handler):
+        def handler_wrapper(event, context, **kwargs):
+            sns = event['Records'][0]['Sns']
+            if required and not any((topic_name in sns['TopicArn'] for topic_name in required)):
+                raise Exception('Message received not from expected topic.')
+            try:
+                message_body = json.loads(sns.get('Message'))
+            except Exception as err:
+                raise Exception('Could not decode message.')
+
+            kwargs['message'] = message_body
+
+            return handler(event, context, **kwargs)
+
+        return handler_wrapper
+
+    return subscriber_handler
+
+
 def configuration_aware(config_file, create=False):
     """ Decorator that expects a configuration file in an S3 Bucket specified by the 'CONFIG'
     environment variable and S3 Bucket Key (path) specified by config_file. If create=True, this
