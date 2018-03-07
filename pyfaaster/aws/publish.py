@@ -24,7 +24,7 @@ def publish(conn, messages):
         logger.debug(f'Publishing {message} to {topic_arn}')
         conn['sns'].publish(
             TopicArn=topic_arn,
-            Message=json.dumps(message),
+            Message=json.dumps(message, iterable_as_array=True),
         )
         published_messages.append(message)
     return published_messages
