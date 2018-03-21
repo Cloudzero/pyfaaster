@@ -42,15 +42,15 @@ def load_or_create(conn, config_bucket, config_file):
         return save(conn, config_bucket, config_file, {})
 
 
-def conn(encrypt_key_arn):
+def conn(encrypt_key_arn, profile=None):
     return {
-        'session': boto3.session.Session(),
+        'session': boto3.session.Session(profile_name=profile),
         'encrypt_key_arn': encrypt_key_arn,
     }
 
 
 @functools.lru_cache(maxsize=8)
-def read_only(config_bucket, config_file):
+def read_only(config_bucket, config_file, profile=None):
     logger.info(f'Reading {config_bucket}/{config_file}.')
-    connection = conn(None)
+    connection = conn(None, profile=profile)
     return load(connection, config_bucket, config_file)
