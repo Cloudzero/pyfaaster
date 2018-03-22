@@ -22,16 +22,17 @@ class LambdaInvokeException(Exception):
         self.inner_error = boto_error
 
 
-def lambda_invoke(namespace, base_func_name, prefix='', payload=bytes(), async=False):
+def lambda_invoke(namespace, base_func_name, func_prefix='', payload=bytes(), run_async=False):
     """
     Invoke a lambda function
 
     Args:
-        namespace: The identifier of this installation
-        base_func_name: The base name of the lambda function to invoke
+        namespace (str): The identifier of this installation
+        base_func_name (str): The base name of the lambda function to invoke
+        func_prefix (str): A prefix to assign to the function name (can denote something like an application name)
         payload: The payload to send to the lambda function.  Default is an empty set of bytes.
-        async: If true, invoke the lambda in a non-blocking fire-and-forget manner.  If false, the
-               caller will wait for a response before continuing.
+        run_async (bool): If true, invoke the lambda in a non-blocking fire-and-forget manner.  If false, the
+                          caller will wait for a response before continuing.
 
     Returns:
         The response from the lambda.  When using async mode, a response will be available, but it will
@@ -40,11 +41,11 @@ def lambda_invoke(namespace, base_func_name, prefix='', payload=bytes(), async=F
     lambda_client = boto3.client('lambda')
 
     template = '{pref}-{namespace}-{name}'
-    full_name = template.format(pref=prefix, namespace=namespace, name=base_func_name)
+    full_name = template.format(pref=func_prefix, namespace=namespace, name=base_func_name)
 
     try:
-        invoke_type = 'Event' if async else 'RequestResponse'
-        synchronicity = 'asynchronously' if async else 'synchronously'
+        invoke_type = 'Event' if run_async else 'RequestResponse'
+        synchronicity = 'asynchronously' if run_async else 'synchronously'
         logger.debug(f'Invoking {full_name} {synchronicity} and sending {len(payload)} bytes')
         return_value = lambda_client.invoke(FunctionName=full_name, Payload=payload, InvocationType=invoke_type)
     except lambda_client.exceptions.ResourceNotFoundException:
