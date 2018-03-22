@@ -12,7 +12,7 @@ import pyfaaster.aws.configuration as conf
 from pyfaaster.aws.exceptions import HTTPResponseException
 import pyfaaster.aws.publish as publish
 import pyfaaster.aws.tools as tools
-import pyfaaster.aws.utils as utils
+import pyfaaster.common.utils as utils
 
 
 logger = tools.setup_logging('pyfaaster')

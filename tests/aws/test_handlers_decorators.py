@@ -12,7 +12,7 @@ import simplejson as json
 
 from pyfaaster.aws.exceptions import HTTPResponseException
 import pyfaaster.aws.handlers_decorators as decs
-import pyfaaster.aws.utils as utils
+import pyfaaster.common.utils as utils
 
 _CONFIG_BUCKET = 'example_config_bucket'
 
