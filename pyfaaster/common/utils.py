@@ -10,6 +10,8 @@ import functools
 import uuid
 import enum
 import simplejson as json
+import random
+import string
 
 
 def deep_get(dictionary, *keys, ignore_case=False):
@@ -109,3 +111,42 @@ class EnumEncoder(json.JSONEncoder):
         if isinstance(o, enum.Enum):
             return o.value
         return super(EnumEncoder, self).default(o)
+
+
+def create_random_string(size=12, chars=string.ascii_letters + string.digits):
+    """
+    Generate a cryptographically strong random string
+    http://stackoverflow.com/a/2257449/771901
+
+    Args:
+        size (int): length of string to generate
+        chars (str): set of digits that will be used to generate the string
+
+    Returns:
+        str: Generated random string
+    """
+    return ''.join(random.SystemRandom().choice(chars) for _ in range(size))
+
+
+def one(iter):
+    """ Returns True if exactly one member of iter has a truthy value, else False.
+
+    Args:
+        iter (iterable): an iterable containing values that can be evaluated as bools.
+
+    Returns:
+        (bool): True if exactly one member is truthy, else False.
+
+    >>> one({"a", None, True})
+    False
+
+    >>> one({None, None, None})
+    False
+
+    >>> one({True, False, False})
+    True
+
+    >>> one({False, False, True})
+    True
+    """
+    return len([s for s in iter if s]) == 1
