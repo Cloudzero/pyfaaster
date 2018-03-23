@@ -186,18 +186,24 @@ def body(required=None, optional=None):
     return body_handler
 
 
-def scopes(*scopeList):
+def scopes(*scope_list):
     """ Decorator that will check that event.requestContext.authorizer.scopes has the given
     scopes. This decorator assumes that you have an upstream authorizer putting the scopes from the
     access_token into the event.requestContext.authorizer.scopes. This is a reasonable assumption
     if you are using a custom authorizer, which we are!
 
     Args:
-        scopeList (List): List of required access_token scopes.
+        scope_list (List): List of required access_token scopes. Each item must be castable to string.
 
     Returns:
         handler (func): a lambda handler function that is namespace aware
     """
+    try:
+        string_scope_list = [str(s) for s in scope_list]
+    except Exception as err:
+        logger.exception(err)
+        raise TypeError('All scopes must be castable to string.')
+
     def scopes_handler(handler):
         def handler_wrapper(event, context, **kwargs):
             token_scopes = utils.deep_get(event, 'requestContext', 'authorizer', 'scopes')
@@ -205,8 +211,8 @@ def scopes(*scopeList):
             if not token_scopes:
                 return {'statusCode': 500, 'body': 'Invalid token scopes: missing!'}
 
-            if not all((s in token_scopes for s in scopeList)):
-                logger.warning(f'There is a required scope [{scopeList}] missing from token scopes [{token_scopes}].')
+            if not all((s in token_scopes for s in string_scope_list)):
+                logger.warning(f'There is a required scope [{scope_list}] missing from token scopes [{token_scopes}].')
                 return {'statusCode': 403, 'body': 'access_token has insufficient access.'}
 
             return handler(event, context, **kwargs)

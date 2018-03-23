@@ -415,6 +415,36 @@ def test_scopes():
 
 
 @pytest.mark.unit
+def test_scopes_type_error():
+    class Uncastable():
+        def __str__(self):
+            raise Exception()
+
+    with pytest.raises(TypeError) as err:
+        decs.scopes('foo', Uncastable())
+        assert 'castable' in err
+
+
+@pytest.mark.unit
+def test_scopes_type_casting():
+    class Castable():
+        def __str__(self):
+            return 'castable'
+
+    event = {
+        'requestContext': {
+            'authorizer': {
+                'scopes': 'castable',
+            }
+        }
+    }
+    handler = decs.scopes(Castable())(identity_handler)
+
+    response = handler(event, None)
+    assert response['body']['event'] == event
+
+
+@pytest.mark.unit
 def test_insufficient_scopes():
     event = {
         'requestContext': {
