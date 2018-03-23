@@ -6,7 +6,9 @@
 Unit tests for various general utility functions that don't have any connection to domain/business logic
 """
 
+import enum
 import pytest
+import simplejson as json
 
 import pyfaaster.common.utils as utils
 
@@ -169,3 +171,17 @@ def test_select_keys_none():
     assert utils.select_keys({}) == {}
     assert utils.select_keys({'a': 1}) == {}
     assert utils.select_keys(None, 'a') is None
+
+
+@pytest.mark.unit
+def test_enum_json_encoder():
+    class SampleEnum(enum.Enum):
+        NOT_OK = 0
+        OK = 1
+        MAYBE_OK = 2
+
+    payload = {'key': SampleEnum.OK}
+    result = json.dumps(payload, cls=utils.EnumEncoder)
+    assert result
+    result = json.loads(result)
+    assert result['key'] == SampleEnum.OK.value
