@@ -389,6 +389,12 @@ def configuration_aware(config_file, create=False):
     environment variable and S3 Bucket Key (path) specified by config_file. If create=True, this
     decorator will create an empty configuration file instead of erring.
 
+    NOTE: Decorating a lambda with this incurs a performance penalty - S3 is checked on every call.
+          This makes sense when writing a lambda function that updates config and is called infrequently,
+          but makes far less sense if all one needs to do is read config data.
+    TODO: We need a more clear, refined pattern for dealing with uncached writes and cached reads.
+          The way the current config features are written, it's not clear how best to use them.
+
     Args:
         config_file (str): key in the 'CONFIG' S3 bucket of expected configuration file
         create (Bool): optionally create configuration file if absent
