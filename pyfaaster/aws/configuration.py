@@ -25,11 +25,11 @@ def load(conn, config_bucket, config_file):
 
 def save(conn, config_bucket, config_file, settings):
     logger.info(f'Saving configuration to {config_bucket}/{config_file}.')
+    encryption = {'ServerSideEncryption': 'aws:kms', 'SSEKMSKeyId': conn['encrypt_key_arn']} if conn['encrypt_key_arn'] else {'ServerSideEncryption': 'AES256'}
     conn['session'].client('s3').put_object(Bucket=config_bucket,
                                             Key=config_file,
                                             Body=io.StringIO(json.dumps(settings)).read(),
-                                            ServerSideEncryption='aws:kms',
-                                            SSEKMSKeyId=conn['encrypt_key_arn'])
+                                            **encryption)
     return settings
 
 
@@ -42,7 +42,7 @@ def load_or_create(conn, config_bucket, config_file):
         return save(conn, config_bucket, config_file, {})
 
 
-def conn(encrypt_key_arn, profile=None):
+def conn(encrypt_key_arn=None, profile=None):
     return {
         'session': boto3.session.Session(profile_name=profile),
         'encrypt_key_arn': encrypt_key_arn,

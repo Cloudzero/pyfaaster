@@ -33,6 +33,26 @@ def test_configuration():
 
 @pytest.mark.unit
 @moto.mock_s3
+@moto.mock_sts
+def test_configuration_no_encrypt_key():
+    bucket_name = 'bucket'
+    file_name = 'conf.json'
+    conn = conf.conn()
+
+    conn['session'].client('s3').create_bucket(Bucket=bucket_name)
+
+    settings = {
+        'setting_1': 'foo',
+    }
+    saved_settings = conf.save(conn, bucket_name, file_name, settings)
+
+    loaded_settings = conf.load(conn, bucket_name, file_name)
+    assert saved_settings == settings
+    assert loaded_settings == settings
+
+
+@pytest.mark.unit
+@moto.mock_s3
 @moto.mock_kms
 @moto.mock_sts
 def test_read_only():
