@@ -477,6 +477,25 @@ def account_id_aware(handler):
     return handler_wrapper
 
 
+def catch_exceptions(handler):
+    """ Decorator that will catch all exceptions. Normally bad practice in pure Python programming, but when running
+    Python in AWS Lambda, by preventing a Python Lambda from throwing an exception you can prevent a cold start
+    the next time the Lambda function is called
+
+    Args:
+        handler (func): an AWS Lambda handler function
+
+    Returns:
+        handler (func): an AWS Lambda handler that will catch any exception that occurs in the decorated function
+    """
+    def handler_wrapper(*args, **kwargs):
+        try:
+            return handler(*args, **kwargs)
+        except Exception as e:
+            logger.exception(f'Exception caught by catch_exceptions decorator: {e}')
+    return handler_wrapper
+
+
 def default(default_error_message=None):
     """
     AWS lambda handler handler. A wrapper with standard boilerplate implementing the
