@@ -9,9 +9,9 @@ import gzip
 def decode_record(record, compressed=False, transform_fn=lambda x: x):
     data = record['kinesis']['data']
     decoded = base64.b64decode(data)
-    return fn((decoded if not compressed else gzip.decompress(decoded)).decode('utf-8'))
+    return transform_fn((decoded if not compressed else gzip.decompress(decoded)).decode('utf-8'))
 
 
 def decode_records(records, compressed=False, transform_fn=lambda x: x):
-    return [decode_record(r, compressed, fn)
+    return [decode_record(r, compressed, transform_fn)
             for r in records]
