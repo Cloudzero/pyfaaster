@@ -639,6 +639,19 @@ def test_subscriber_event_not_sns_format(context):
 
 
 @pytest.mark.unit
+def test_catch_exceptions():
+
+    @decs.catch_exceptions
+    def throws_exception():
+        raise Exception('Catch meeeeee')
+
+    try:
+        throws_exception()
+    except Exception:
+        pytest.fail("The catch_exceptions decorator didn't do its job! You had one job ... one job!")
+
+
+@pytest.mark.unit
 @moto.mock_s3
 @moto.mock_kms
 @moto.mock_sts
