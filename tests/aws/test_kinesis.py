@@ -25,5 +25,5 @@ def test_decode_record_compressed():
 def test_decode_records_with_transform():
     s64 = b'cGhlbm9tZW5hbCBjb3NtaWMgcG93ZXJz'
     records = [{'kinesis': {'data': s64}}]
-    [actual] = kinesis.decode_records(records, fn=lambda s: s.upper())
+    [actual] = kinesis.decode_records(records, transform_fn=lambda s: s.upper())
     assert actual == 'PHENOMENAL COSMIC POWERS'
