@@ -1,7 +1,5 @@
-# Copyright (c) 2017 CloudZero - ALL RIGHTS RESERVED - PROPRIETARY AND CONFIDENTIAL
-# Unauthorized copying of this file and/or project, via any medium is strictly prohibited.
-# Direct all questions to legal@cloudzero.com
+# Copyright (c) 2016-present, CloudZero, Inc. All rights reserved.
+# Licensed under the BSD-style license. See LICENSE file in the project root for full license information.
 
-boto3==1.5.20
-botocore==1.8.34
-simplejson==3.11.1
+boto3==1.7.14
+simplejson==3.14.0
