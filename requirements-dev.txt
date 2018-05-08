@@ -2,7 +2,7 @@
 # Licensed under the BSD-style license. See LICENSE file in the project root for full license information.
 
 attrdict==2.0.0
-awscli==1.15.14
+awscli>=1.15.14,1.15.99
 docker==3.3.0
 flake8==3.5.0
 flake8-copyright==0.2.0
