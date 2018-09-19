@@ -43,3 +43,17 @@ def test_update_item_from_dict_reserved_words():
     attributes = {'AGGREGATE': 'Lloyd'}
     item = dyn.update_item_from_dict(table, {'id': '1'}, attributes)
     assert item == {'id': '1', 'name': 'Harry', 'AGGREGATE': 'Lloyd'}
+
+
+@pytest.mark.unit
+@moto.mock_dynamodb2
+@moto.mock_sts
+def test_update_item_from_dict_new_item():
+    client = boto3.client('dynamodb')
+    create_test_table(client, 'test-table')
+    table = boto3.resource('dynamodb').Table('test-table')
+    attributes = {'best-friend': 'Lloyd'}
+    item = dyn.update_item_from_dict(table, {'id': '1'}, attributes)
+    db_item = table.get_item(Key={'id': '1'})['Item']
+    assert not item
+    assert db_item == {'id': '1', 'best-friend': 'Lloyd'}

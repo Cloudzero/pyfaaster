@@ -16,5 +16,6 @@ def update_item_from_dict(table, key, dictionary):
         UpdateExpression=update_expression,
         ExpressionAttributeNames=attribute_names,
         ExpressionAttributeValues=attribute_values,
+        ReturnValues='ALL_NEW',
     )
-    return item['Attributes'] if item else None
+    return item.get('Attributes', {}) if item else None
