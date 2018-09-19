@@ -14,7 +14,8 @@ def create_test_table(client, name):
     client.create_table(TableName=name,
                         AttributeDefinitions=[{'AttributeName': 'id', 'AttributeType': 'S'}],
                         KeySchema=[{'AttributeName': 'id', 'KeyType': 'HASH'}],
-                        ProvisionedThroughput={'ReadCapacityUnits': 1,'WriteCapacityUnits': 1})
+                        ProvisionedThroughput={'ReadCapacityUnits': 1, 'WriteCapacityUnits': 1})
+
 
 @pytest.mark.unit
 @moto.mock_dynamodb2
@@ -28,4 +29,3 @@ def test_update_item_from_dict():
     attributes = {'best-friend': 'Lloyd'}
     item = dyn.update_item_from_dict(table, {'id': '1'}, attributes)
     assert item == {'id': '1', 'name': 'Harry', 'best-friend': 'Lloyd'}
-
