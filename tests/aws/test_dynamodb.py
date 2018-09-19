@@ -29,3 +29,17 @@ def test_update_item_from_dict():
     attributes = {'best-friend': 'Lloyd'}
     item = dyn.update_item_from_dict(table, {'id': '1'}, attributes)
     assert item == {'id': '1', 'name': 'Harry', 'best-friend': 'Lloyd'}
+
+
+@pytest.mark.unit
+@moto.mock_dynamodb2
+@moto.mock_sts
+def test_update_item_from_dict_reserved_words():
+    client = boto3.client('dynamodb')
+    create_test_table(client, 'test-table')
+    table = boto3.resource('dynamodb').Table('test-table')
+    table.put_item(Item={'id': '1', 'name': 'Harry'})
+
+    attributes = {'AGGREGATE': 'Lloyd'}
+    item = dyn.update_item_from_dict(table, {'id': '1'}, attributes)
+    assert item == {'id': '1', 'name': 'Harry', 'AGGREGATE': 'Lloyd'}
