@@ -6,12 +6,15 @@
 Various general utility functions that don't have any connection to domain/business logic
 """
 
-import functools
-import uuid
+import collections
 import enum
-import simplejson as json
+import functools
+import itertools
 import random
 import string
+import uuid
+
+import simplejson as json
 
 
 def deep_get(dictionary, *keys, ignore_case=False):
@@ -150,3 +153,23 @@ def one(iter):
     True
     """
     return len([s for s in iter if s]) == 1
+
+
+def group_by(xs, fx, fys=lambda ys: ys):
+    """ Returns a map of the elements of `xs` keyed by the result of
+        `fx` on each element. The value at each key will be a list of the
+        corresponding elements, in the order they appeared in `xs`, the optional
+        `fys` transforms this list of elements, i.e. it expects a list as its arg.
+
+    >>> xs = [['a', 1], ['b', 2], ['c', 3], ['a', 2]]
+    >>> group_by(xs, lambda x: x[0])
+    {'a': [['a', 1], ['a', 2]], 'b': [['b', 2]], 'c': [['c', 3]]}
+    >>> group_by(xs, lambda x: x[0], fys=lambda ys: [y[1] for y in ys])
+    {'a': [1, 2], 'b': [2], 'c': [3]}
+    """
+    groups = collections.defaultdict(list)
+
+    for k, ys in itertools.groupby(sorted(xs, key=fx), key=fx):
+        groups[k].extend(fys(list(ys)))
+
+    return groups

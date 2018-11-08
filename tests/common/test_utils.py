@@ -185,3 +185,10 @@ def test_enum_json_encoder():
     assert result
     result = json.loads(result)
     assert result['key'] == SampleEnum.OK.value
+
+
+@pytest.mark.unit
+def test_group_by():
+    xs = [['a', 1], ['b', 2], ['c', 3], ['a', 2]]
+    assert utils.group_by(xs, lambda x: x[0]) == {'a': [['a', 1], ['a', 2]], 'b': [['b', 2]], 'c': [['c', 3]]}
+    assert utils.group_by(xs, lambda x: x[0], fys=lambda ys: [y[1] for y in ys]) == {'a': [1, 2], 'b': [2], 'c': [3]}
