@@ -156,7 +156,7 @@ def one(iter):
 
 
 def group_by(xs, fx, fys=lambda ys: ys):
-    """ Returns a map of the elements of `xs` keyed by the result of
+    """ Returns a dictionary of the elements of `xs` keyed by the result of
         `fx` on each element. The value at each key will be a list of the
         corresponding elements, in the order they appeared in `xs`, the optional
         `fys` transforms this list of elements, i.e. it expects a list as its arg.
