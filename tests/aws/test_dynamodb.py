@@ -3,57 +3,50 @@
 # Licensed under the BSD-style license. See LICENSE file in the project root for full license information.
 
 
-import boto3
-import moto
+import botocore.session
 import pytest
+from botocore.stub import Stubber
 
 import pyfaaster.aws.dynamodb as dyn
 
 
-def create_test_table(client, name):
-    client.create_table(TableName=name,
-                        AttributeDefinitions=[{'AttributeName': 'id', 'AttributeType': 'S'}],
-                        KeySchema=[{'AttributeName': 'id', 'KeyType': 'HASH'}],
-                        ProvisionedThroughput={'ReadCapacityUnits': 1, 'WriteCapacityUnits': 1})
-
-
 @pytest.mark.unit
-@moto.mock_dynamodb2
-@moto.mock_sts
 def test_update_item_from_dict():
-    client = boto3.client('dynamodb')
-    create_test_table(client, 'test-table')
-    table = boto3.resource('dynamodb').Table('test-table')
-    table.put_item(Item={'id': '1', 'name': 'Harry'})
+    client = botocore.session.get_session().create_client('dynamodb')
 
-    attributes = {'best-friend': 'Lloyd'}
-    item = dyn.update_item_from_dict(table, {'id': '1'}, attributes)
-    assert item == {'id': '1', 'name': 'Harry', 'best-friend': 'Lloyd'}
+    expected_update_item_response = {
+        'Attributes': {'id': {'S': '1'}, 'name': {'S': 'Harry'}, 'best-friend': {'S': 'Lloyd'}},
+        'ConsumedCapacity': {},
+        'ItemCollectionMetrics': {}}
+    expected_update_item_parameters = {'ExpressionAttributeNames': {'#best-friend': 'best-friend'},
+                                       'ExpressionAttributeValues': {':best-friend': {'S': 'Lloyd'}},
+                                       'Key': {'id': {'S': '1'}},
+                                       'ReturnValues': 'ALL_NEW',
+                                       'TableName': 'test-table',
+                                       'UpdateExpression': 'SET #best-friend = :best-friend'}
+    with Stubber(client) as stubber:
+        stubber.add_response('update_item', expected_update_item_response, expected_update_item_parameters)
+        attributes = {'best-friend': 'Lloyd'}
+        item = dyn.update_item_from_dict('test-table', {'id': '1'}, attributes, client)
+        assert item == {'id': '1', 'name': 'Harry', 'best-friend': 'Lloyd'}
 
 
 @pytest.mark.unit
-@moto.mock_dynamodb2
-@moto.mock_sts
 def test_update_item_from_dict_reserved_words():
-    client = boto3.client('dynamodb')
-    create_test_table(client, 'test-table')
-    table = boto3.resource('dynamodb').Table('test-table')
-    table.put_item(Item={'id': '1', 'name': 'Harry'})
+    client = botocore.session.get_session().create_client('dynamodb')
 
-    attributes = {'AGGREGATE': 'Lloyd'}
-    item = dyn.update_item_from_dict(table, {'id': '1'}, attributes)
-    assert item == {'id': '1', 'name': 'Harry', 'AGGREGATE': 'Lloyd'}
-
-
-@pytest.mark.unit
-@moto.mock_dynamodb2
-@moto.mock_sts
-def test_update_item_from_dict_new_item():
-    client = boto3.client('dynamodb')
-    create_test_table(client, 'test-table')
-    table = boto3.resource('dynamodb').Table('test-table')
-    attributes = {'best-friend': 'Lloyd'}
-    item = dyn.update_item_from_dict(table, {'id': '1'}, attributes)
-    db_item = table.get_item(Key={'id': '1'})['Item']
-    assert not item
-    assert db_item == {'id': '1', 'best-friend': 'Lloyd'}
+    expected_update_item_response = {
+        'Attributes': {'id': {'S': '1'}, 'name': {'S': 'Harry'}, 'AGGREGATE': {'S': 'Lloyd'}},
+        'ConsumedCapacity': {},
+        'ItemCollectionMetrics': {}}
+    expected_update_item_parameters = {'ExpressionAttributeNames': {'#AGGREGATE': 'AGGREGATE'},
+                                       'ExpressionAttributeValues': {':AGGREGATE': {'S': 'Lloyd'}},
+                                       'Key': {'id': {'S': '1'}},
+                                       'ReturnValues': 'ALL_NEW',
+                                       'TableName': 'test-table',
+                                       'UpdateExpression': 'SET #AGGREGATE = :AGGREGATE'}
+    with Stubber(client) as stubber:
+        stubber.add_response('update_item', expected_update_item_response, expected_update_item_parameters)
+        attributes = {'AGGREGATE': 'Lloyd'}
+        item = dyn.update_item_from_dict('test-table', {'id': '1'}, attributes, client)
+        assert item == {'id': '1', 'name': 'Harry', 'AGGREGATE': 'Lloyd'}

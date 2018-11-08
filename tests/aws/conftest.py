@@ -14,7 +14,6 @@ import pytest
 
 LOCALSTACK_IMAGE = "localstack/localstack:0.7.3"
 
-# even w/ moto, we need this set
 os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
 
 

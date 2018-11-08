@@ -150,3 +150,11 @@ def one(iter):
     True
     """
     return len([s for s in iter if s]) == 1
+
+
+def is_json(input):
+    try:
+        _ = json.loads(input)  # noqa: F841
+    except ValueError:
+        return False
+    return True

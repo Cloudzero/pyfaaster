@@ -17,22 +17,29 @@ def publish(conn, messages):
     published_messages = []
     for topic, message in messages.items():
         topic_arn = topic.format(
-            namespace=conn['namespace']) if 'arn:aws:sns' in topic else conn['topic_arn_prefix'] + topic.format(namespace=conn['namespace'])
+            namespace=conn['namespace']) if 'arn:aws:sns' in topic else conn['topic_arn_prefix'] + topic.format(
+            namespace=conn['namespace'])
         message = messages[topic]
         if getattr(message, 'get', None) and not message.get('timestamp'):
             message['timestamp'] = str(dt.datetime.now(tz=dt.timezone.utc))
         logger.debug(f'Publishing {message} to {topic_arn}')
+
+        if isinstance(message, str):
+            prepared_message = message
+        else:
+            prepared_message = json.dumps(message, iterable_as_array=True)
+
         conn['sns'].publish(
             TopicArn=topic_arn,
-            Message=json.dumps(message, iterable_as_array=True),
+            Message=prepared_message,
         )
         published_messages.append(message)
     return published_messages
 
 
-def conn(region, account_id, namespace):
+def conn(region, account_id, namespace, client=None):
     return {
         'namespace': namespace,
         'topic_arn_prefix': f'arn:aws:sns:{region}:{account_id}:',
-        'sns': boto3.client('sns'),
+        'sns': client or boto3.client('sns'),
     }

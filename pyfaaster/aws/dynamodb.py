@@ -2,20 +2,34 @@
 # Copyright (c) 2016-present, CloudZero, Inc. All rights reserved.
 # Licensed under the BSD-style license. See LICENSE file in the project root for full license information.
 
+from boto3.dynamodb.types import TypeSerializer, TypeDeserializer
 
-def update_item_from_dict(table, key, dictionary):
+
+def update_item_from_dict(table_name, key, dictionary, client):
     """Update the item identified by `key` in the DynamoDB `table` by adding
     all of the attributes in the `dictionary`.
+    :param client:
     """
+    serializer = TypeSerializer()
+    deserializer = TypeDeserializer()
+
     updates_string = ', '.join([f'#{k} = :{k}' for k in dictionary.keys()])
     update_expression = f'SET {updates_string}'
     attribute_names = {f'#{k}': k for k in dictionary.keys()}
-    attribute_values = {f':{k}': v for k, v in dictionary.items()}
-    item = table.update_item(
-        Key=key,
+    attribute_values = {f':{k}': serializer.serialize(v) for k, v in dictionary.items()}
+    item = client.update_item(
+        TableName=table_name,
+        Key={k: serializer.serialize(v) for k, v in key.items()},
         UpdateExpression=update_expression,
         ExpressionAttributeNames=attribute_names,
         ExpressionAttributeValues=attribute_values,
         ReturnValues='ALL_NEW',
     )
-    return item.get('Attributes', {}) if item else None
+    if item:
+        result_data = item.get('Attributes', {})
+        output_data = {}
+        for k, v in result_data.items():
+            output_data[k] = deserializer.deserialize(v)
+        return output_data
+    else:
+        return None

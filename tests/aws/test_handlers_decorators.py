@@ -1,11 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2016-present, CloudZero, Inc. All rights reserved.
 # Licensed under the BSD-style license. See LICENSE file in the project root for full license information.
-
-
 import attrdict
-import boto3
-import moto
 import os
 import pytest
 import simplejson as json
@@ -124,7 +120,7 @@ def test_cors_origin_ok(context):
                 'origin': origin
             }
         }
-        handler = decs.allow_origin_response('.*\.cloudzero\.com')(identity_handler)
+        handler = decs.allow_origin_response(r'.*\.cloudzero\.com')(identity_handler)
 
         response = handler(event, None)
         assert utils.deep_get(response, 'body', 'kwargs', 'request_origin') == origin
@@ -141,7 +137,7 @@ def test_cors_origin_not_case_sensitive(context):
                 'Origin': origin  # CloudFront often rewrites headers and may assign different case like this
             }
         }
-        handler = decs.allow_origin_response('.*\.cloudzero\.com')(identity_handler)
+        handler = decs.allow_origin_response(r'.*\.cloudzero\.com')(identity_handler)
 
         response = handler(event, None)
         assert utils.deep_get(response, 'body', 'kwargs', 'request_origin') == origin
@@ -157,7 +153,7 @@ def test_cors_origin_bad():
             'origin': origin
         }
     }
-    handler = decs.allow_origin_response('.*\.cloudzero\.com')(identity_handler)
+    handler = decs.allow_origin_response(r'.*\.cloudzero\.com')(identity_handler)
 
     response = handler(event, None)
     assert response.get('statusCode') == 403
@@ -492,7 +488,6 @@ def test_no_scopes_in_context():
 
 @pytest.mark.unit
 def test_http_cors_composition(context):
-
     @decs.allow_origin_response('.*')
     @decs.http_response()
     def cors_first(e, c, **ks):
@@ -504,31 +499,6 @@ def test_http_cors_composition(context):
         return {}
 
     assert cors_first({}, None) == http_first({}, None)
-
-
-@pytest.mark.unit
-@moto.mock_sts
-@moto.mock_sns
-def test_publisher(context):
-    event = {}
-    lambda_context = MockContext('arn:aws:lambda:us-east-1:123456789012')
-
-    messages = {
-        'topic-1': 'foo',
-        'topic-2': 'bar',
-    }
-    created_arns = [boto3.client('sns').create_topic(Name=name)['TopicArn'] for name in messages.keys()]
-
-    assert len(created_arns) == 2
-
-    @decs.publisher
-    def handler(event, context, **kwargs):
-        return {
-            'messages': messages
-        }
-
-    response = handler(event, lambda_context)
-    assert response['messages'] == messages
 
 
 @pytest.mark.unit
@@ -640,7 +610,6 @@ def test_subscriber_event_not_sns_format(context):
 
 @pytest.mark.unit
 def test_catch_exceptions():
-
     @decs.catch_exceptions
     def throws_exception():
         raise Exception('Catch meeeeee')
@@ -649,24 +618,3 @@ def test_catch_exceptions():
         throws_exception()
     except Exception:
         pytest.fail("The catch_exceptions decorator didn't do its job! You had one job ... one job!")
-
-
-@pytest.mark.unit
-@moto.mock_s3
-@moto.mock_kms
-@moto.mock_sts
-def test_default(context):
-    event = {}
-    lambda_context = MockContext('::::arn')
-
-    boto3.client('s3').create_bucket(Bucket=_CONFIG_BUCKET)
-
-    handler = decs.default()(identity_handler)
-
-    response = handler(event, lambda_context)
-    assert response['statusCode'] == 200
-    response_body = json.loads(response['body'])
-    assert response_body['event'] == event
-    keys = ['account_id', 'client_details', 'CONFIG', 'configuration', 'NAMESPACE']
-    print(response_body['kwargs'])
-    assert all(k in response_body['kwargs'] for k in keys)
