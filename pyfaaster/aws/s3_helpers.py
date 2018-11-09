@@ -13,11 +13,11 @@ import pyfaaster.aws.tools as tools
 logger = tools.setup_logging('pyfaaster')
 
 
-def verify_bucket_access(s3_connection, bucket_name):
+def verify_bucket_access(client, bucket_name):
     """
     Quick and cheap check to see if bucket can be accessed
     Args:
-        s3_connection (awsProvider.connection): an s3 connection
+        client: a Boto3 client object
         bucket_name (str): name of bucket to check
 
     Returns:
@@ -25,7 +25,7 @@ def verify_bucket_access(s3_connection, bucket_name):
 
     """
     try:
-        s3_connection.client.head_bucket(Bucket=bucket_name)
+        client.head_bucket(Bucket=bucket_name)
         return True
     except exc.ClientError as err:
         logger.debug('Unable to access bucket: {} (error: {})'.format(bucket_name, err))

@@ -44,7 +44,7 @@ def load_or_create(conn, config_bucket, config_file):
         return save(conn, config_bucket, config_file, {})
 
 
-def connection(encrypt_key_arn=None, client=None):
+def conn(encrypt_key_arn=None, client=None):
     return {
         'client': client or boto3.client('s3'),
         'encrypt_key_arn': encrypt_key_arn,

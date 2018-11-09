@@ -407,7 +407,7 @@ def configuration_aware(config_file, create=False):
             config_bucket = os.environ['CONFIG']
             encrypt_key_arn = os.environ.get('ENCRYPT_KEY_ARN')
 
-            conn = conf.connection(encrypt_key_arn)
+            conn = conf.conn(encrypt_key_arn)
             try:
                 settings = conf.load_or_create(conn, config_bucket, config_file) if create else conf.load(
                     conn, config_bucket, config_file)

@@ -21,7 +21,7 @@ def test_configuration():
         'setting_1': 'foo'
     }
     s3 = botocore.session.get_session().create_client('s3')
-    conn = conf.connection(encrypt_key_arn, client=s3)
+    conn = conf.conn(encrypt_key_arn, client=s3)
 
     expected_put_response = {
         'Expiration': 'string',
@@ -62,7 +62,7 @@ def test_configuration_no_encrypt_key():
         'setting_1': 'foo'
     }
     s3 = botocore.session.get_session().create_client('s3')
-    conn = conf.connection(client=s3)
+    conn = conf.conn(client=s3)
 
     expected_put_response = {
         'Expiration': 'string',
@@ -93,16 +93,6 @@ def test_configuration_no_encrypt_key():
     assert saved_settings == settings
     assert loaded_settings == settings
 
-    # with Stubber(s3) as stubber:
-    #     settings = {
-    #         'setting_1': 'foo',
-    #     }
-    #     saved_settings = conf.save(conn, bucket_name, file_name, settings)
-    #
-    # loaded_settings = conf.load(conn, bucket_name, file_name)
-    # assert saved_settings == settings
-    # assert loaded_settings == settings
-
 
 @pytest.mark.unit
 def test_read_only():
@@ -113,7 +103,7 @@ def test_read_only():
         'setting_1': 'foo'
     }
     s3 = botocore.session.get_session().create_client('s3')
-    conn = conf.connection(encrypt_key_arn, client=s3)
+    conn = conf.conn(encrypt_key_arn, client=s3)
 
     expected_put_response = {
         'Expiration': 'string',
