@@ -2,16 +2,30 @@
 # Copyright (c) 2016-present, CloudZero, Inc. All rights reserved.
 # Licensed under the BSD-style license. See LICENSE file in the project root for full license information.
 
+import re
 from boto3.dynamodb.types import TypeSerializer, TypeDeserializer
+
+pattern = re.compile(r'[\W_]+', re.UNICODE)
 
 
 def update_item_from_dict(table_name, key, dictionary, client):
-    """Update the item identified by `key` in the DynamoDB `table` by adding
+    """
+    Update the item identified by `key` in the DynamoDB `table` by adding
     all of the attributes in the `dictionary`.
-    :param client:
+    Args:
+        table_name (str):
+        key (dict):
+        dictionary (dict):
+        client:
+
+    Returns:
+        dict
     """
     serializer = TypeSerializer()
     deserializer = TypeDeserializer()
+
+    # Convert all keys to alphanumeric
+    dictionary = {pattern.sub("", k): v for k, v in dictionary.items()}
 
     updates_string = ', '.join([f'#{k} = :{k}' for k in dictionary.keys()])
     update_expression = f'SET {updates_string}'
