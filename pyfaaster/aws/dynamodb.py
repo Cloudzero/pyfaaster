@@ -24,13 +24,13 @@ def update_item_from_dict(table_name, key, dictionary, client):
     serializer = TypeSerializer()
     deserializer = TypeDeserializer()
 
-    # Convert all keys to alphanumeric
-    dictionary = {pattern.sub("", k): v for k, v in dictionary.items()}
+    # Prepare data by generating an alphanumeric version of the key
+    working_data = {k: [pattern.sub("", k), v] for k, v in dictionary.items()}
 
-    updates_string = ', '.join([f'#{k} = :{k}' for k in dictionary.keys()])
+    updates_string = ', '.join([f'#{v[0]} = :{v[0]}' for v in working_data.values()])
     update_expression = f'SET {updates_string}'
-    attribute_names = {f'#{k}': k for k in dictionary.keys()}
-    attribute_values = {f':{k}': serializer.serialize(v) for k, v in dictionary.items()}
+    attribute_names = {f'#{v[0]}': k for k, v in working_data.items()}
+    attribute_values = {f':{k}': serializer.serialize(v[1]) for k, v in working_data.items()}
     item = client.update_item(
         TableName=table_name,
         Key={k: serializer.serialize(v) for k, v in key.items()},
