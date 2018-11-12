@@ -11,7 +11,7 @@ blocks:
       jobs:
       - name: All Tests
         commands:
-          - sudo apt install python3-pip -y
+          - sudo apt install python3-pip tox -y
           - checkout
           - pip3 install -r requirements-dev.txt
           - make test
