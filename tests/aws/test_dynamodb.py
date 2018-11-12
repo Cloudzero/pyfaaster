@@ -19,7 +19,7 @@ def test_update_item_from_dict():
         'ConsumedCapacity': {},
         'ItemCollectionMetrics': {}}
     expected_update_item_parameters = {'ExpressionAttributeNames': {'#bestfriend': 'best-friend'},
-                                       'ExpressionAttributeValues': {':best-friend': {'S': 'Lloyd'}},
+                                       'ExpressionAttributeValues': {':bestfriend': {'S': 'Lloyd'}},
                                        'Key': {'id': {'S': '1'}},
                                        'ReturnValues': 'ALL_NEW',
                                        'TableName': 'test_table',

@@ -30,7 +30,7 @@ def update_item_from_dict(table_name, key, dictionary, client):
     updates_string = ', '.join([f'#{v[0]} = :{v[0]}' for v in working_data.values()])
     update_expression = f'SET {updates_string}'
     attribute_names = {f'#{v[0]}': k for k, v in working_data.items()}
-    attribute_values = {f':{k}': serializer.serialize(v[1]) for k, v in working_data.items()}
+    attribute_values = {f':{v[0]}': serializer.serialize(v[1]) for k, v in working_data.items()}
     item = client.update_item(
         TableName=table_name,
         Key={k: serializer.serialize(v) for k, v in key.items()},
