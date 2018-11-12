@@ -6,21 +6,12 @@ agent:
     os_image: ubuntu1804
 
 blocks:
-  - name: "Prepare"
-    task:
-      env_vars:
-        - name: APP_ENV
-          value: prod
-      jobs:
-      - name: stuff
-        commands:
-          - sudo apt install python3-pip -y
-
   - name: "tests"
     task:
       jobs:
       - name: All Tests
         commands:
+          - sudo apt install python3-pip -y
           - checkout
           - pip3 install -r requirements-dev.txt
           - make test
