@@ -381,10 +381,11 @@ def test_http_response_with_computed_default_error_message():
 @pytest.mark.unit
 def test_http_response_with_HTTPResponseException():
     input_event = {}
-    expected_body = {'some': 'error'}
+    expected_statuscode = 403
+    expected_body = {'some': 'auth error'}
 
     def http_exception_handler(e, c, **kwargs):
-        raise HTTPResponseException(body=expected_body)
+        raise HTTPResponseException(body=expected_body, statusCode=expected_statuscode)
 
     # lambda w/ HTTPResponseException
     handler = decs.http_response()(http_exception_handler)
@@ -392,7 +393,7 @@ def test_http_response_with_HTTPResponseException():
     actual_output = json.loads(response['body'])
 
     assert actual_output == expected_body
-    assert response['statusCode'] == 500
+    assert response['statusCode'] == expected_statuscode
 
 
 @pytest.mark.unit

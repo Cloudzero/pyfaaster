@@ -268,7 +268,7 @@ def http_response(default_error_message=None):
                 }
             except HTTPResponseException as err:
                 return {
-                    'statusCode': 500,
+                    'statusCode': err.statusCode,
                     'body': json.dumps(err.body, iterable_as_array=True),
                 }
             except Exception as err:

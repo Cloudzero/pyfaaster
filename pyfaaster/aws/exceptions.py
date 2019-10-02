@@ -5,7 +5,9 @@
 
 class HTTPResponseException(Exception):
     """Exception for passing special response body to http_response decorator. The given
-    `body` will be json serialized before returning it."""
+    `body` will be json serialized before returning it.  Can also provide an optional HTTP status
+    code (default: 500)"""
 
-    def __init__(self, body):
+    def __init__(self, body, statusCode=500):
         self.body = body
+        self.statusCode = statusCode
