@@ -1,6 +1,7 @@
-# pyfaaster
+# pyFaaSter
 
-[![Build Status](https://semaphoreci.com/api/v1/projects/0234f02a-6a7c-443d-ac66-7c2a17c1922a/1756352/badge.svg)](https://semaphoreci.com/cloudzero/pyfaaster)
+[![Build Status](https://cloudzero.semaphoreci.com/badges/pyfaaster/branches/master.svg?key=ef11ca9a-a799-43b5-990e-02da3bf005f2)](https://cloudzero.semaphoreci.com/projects/pyfaaster)
+[![PyPI version](https://badge.fury.io/py/pyfaaster.svg)](https://badge.fury.io/py/pyfaaster)
 
 Useful Utilities for Python Functions as a Service (starting with AWS Lambda).
 
