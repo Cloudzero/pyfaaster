@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2016-present, CloudZero, Inc. All rights reserved.
 # Licensed under the BSD-style license. See LICENSE file in the project root for full license information.
-import attrdict
+from collections import namedtuple
+
 import os
 import pytest
 import simplejson as json
@@ -22,7 +23,7 @@ class MockContext(dict):
 
 @pytest.fixture(scope='function')
 def context(mocker):
-    context = attrdict.AttrMap()
+    context = namedtuple('context', ['os'])
 
     orig_env = os.environ.copy()
     os.environ['NAMESPACE'] = 'test-ns'
@@ -51,19 +52,18 @@ def identity_handler(event, context, configuration=None, **kwargs):
 def test_environ_aware_named_kwargs(context):
     @decs.environ_aware(required=['NAMESPACE'], optional=[])
     def handler(e, c, NAMESPACE=None):
-        assert NAMESPACE == utils.deep_get(context, 'os', 'environ', 'NAMESPACE')
+        assert NAMESPACE == context.os['environ']['NAMESPACE']
 
     handler({}, None)
 
 
 @pytest.mark.unit
-def test_environ_aware_opts():
+def test_environ_aware_opts(context):
     event = {}
     handler = decs.environ_aware(required=[], optional=['NAMESPACE', 'FOO'])(identity_handler)
 
     response = handler(event, None)
-    assert utils.deep_get(response, 'body', 'kwargs', 'NAMESPACE') == utils.deep_get(
-        context, 'os', 'environ', 'NAMESPACE')
+    assert utils.deep_get(response, 'body', 'kwargs', 'NAMESPACE') == context.os['environ']['NAMESPACE']
     assert not utils.deep_get(response, 'body', 'kwargs', 'FOO')
 
 
@@ -100,8 +100,7 @@ def test_namespace_aware(context):
     handler = decs.namespace_aware(identity_handler)
 
     response = handler(event, None)
-    assert utils.deep_get(response, 'body', 'kwargs', 'NAMESPACE') == utils.deep_get(
-        context, 'os', 'environ', 'NAMESPACE')
+    assert utils.deep_get(response, 'body', 'kwargs', 'NAMESPACE') == context.os['environ']['NAMESPACE']
 
 
 @pytest.mark.unit
@@ -404,6 +403,29 @@ def test_http_response_with_HTTPResponseException():
         raise HTTPResponseException(body=expected_body, statusCode=expected_statuscode)
 
     # lambda w/ HTTPResponseException
+    handler = decs.http_response()(http_exception_handler)
+    response = handler(input_event, None)
+    actual_output = json.loads(response['body'])
+
+    assert actual_output == expected_body
+    assert response['statusCode'] == expected_statuscode
+
+
+@pytest.mark.unit
+def test_http_response_with_pseudo_HTTPResponseException():
+    input_event = {}
+    expected_statuscode = 420
+    expected_body = {'some': 'random error'}
+
+    class myCustomHTTPResponseException(Exception):
+        def __init__(self, body, statusCode=500):
+            self.body = body
+            self.statusCode = statusCode
+
+    def http_exception_handler(e, c, **kwargs):
+        raise myCustomHTTPResponseException(body=expected_body, statusCode=expected_statuscode)
+
+    # lambda w/ myCustomHTTPResponseException
     handler = decs.http_response()(http_exception_handler)
     response = handler(input_event, None)
     actual_output = json.loads(response['body'])

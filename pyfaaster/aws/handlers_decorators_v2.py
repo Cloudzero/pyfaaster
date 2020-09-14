@@ -250,7 +250,7 @@ def http_response(default_error_message=None):
     body, this decorator will return statusCode 200 and serialize the entire result.
 
     Args:
-        handler (func): a handler function with the signature (event, context) -> result
+        default_error_message (string): Default message to send if none was provided
 
     Returns:
         handler (func): a lambda handler function that whose result is HTTPGateway compatible.
@@ -267,17 +267,25 @@ def http_response(default_error_message=None):
                     'body': json.dumps(res['body'], iterable_as_array=True) if 'body' in res else None,
                 }
             except HTTPResponseException as err:
+                logger.exception(err)
                 return {
                     'statusCode': err.statusCode,
                     'body': json.dumps(err.body, iterable_as_array=True),
                 }
             except Exception as err:
                 logger.exception(err)
-                lambda_function_name = context.function_name.split('.')[-1].replace('_', ' ')
-                return {
-                    'statusCode': 500,
-                    'body': default_error_message or f'Failed to {lambda_function_name}.',
-                }
+                # Try and handle HTTPResponseException like objects
+                if hasattr(err, 'statusCode') and hasattr(err, 'body'):
+                    return {
+                        'statusCode': err.statusCode,
+                        'body': json.dumps(err.body, iterable_as_array=True),
+                    }
+                else:
+                    lambda_function_name = context.function_name.split('.')[-1].replace('_', ' ')
+                    return {
+                        'statusCode': 500,
+                        'body': default_error_message or f'Failed to {lambda_function_name}.',
+                    }
 
         return handler_wrapper
     return http_response_handler
