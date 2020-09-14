@@ -24,7 +24,7 @@ def deep_get(dictionary, *keys, ignore_case=False):
     >>> deep_get(d, 'foo', 'bar')
     'baz'
     >>> deep_get(d, 'foo', 'BLARG')
-    None
+
 
     Args:
         dictionary (dict): dictionary to get
@@ -56,17 +56,16 @@ def select_keys(dictionary, *keys):
     Safely get a 'subset' of a dictionary. Ignore `keys` that don't exist in dictionary.
 
     E.g.,
-    >>> import pyfaaster.aws.utils as utils
     >>> d = {'a': 1, 'b': 2, 'c': 3}
-    >>> utils.select_keys(d, 'a')
+    >>> select_keys(d, 'a')
     {'a': 1}
-    >>> utils.select_keys(d, 'a', 'b')
-    {'b': 2, 'a': 1}
-    >>> utils.select_keys(d, 'a', 'unknown_key')
+    >>> select_keys(d, 'a', 'b')
+    {'a': 1, 'b': 2}
+    >>> select_keys(d, 'a', 'unknown_key')
     {'a': 1}
-    >>> utils.select_keys({})
+    >>> select_keys({})
     {}
-    >>> utils.select_keys({'a': 1})
+    >>> select_keys({'a': 1})
     {}
 
     Args:
@@ -83,8 +82,7 @@ def select_keys(dictionary, *keys):
     except AttributeError:
         return None
 
-    return {k: dictionary[k]
-            for k in dictionary.keys() & set(keys)}
+    return dict(collections.OrderedDict({k: v for k, v in dictionary.items() if k in set(keys)}))
 
 
 def sanitize_passwords(input_settings):
@@ -166,11 +164,11 @@ def group_by(xs, fx, fys=lambda ys: ys):
         `fx` on each element. The value at each key will be a list of the
         corresponding elements, in the order they appeared in `xs`, the optional
         `fys` transforms this list of elements, i.e. it expects a list as its arg.
-     >>> xs = [['a', 1], ['b', 2], ['c', 3], ['a', 2]]
+    >>> xs = [['a', 1], ['b', 2], ['c', 3], ['a', 2]]
     >>> group_by(xs, lambda x: x[0])
-    {'a': [['a', 1], ['a', 2]], 'b': [['b', 2]], 'c': [['c', 3]]}
+    defaultdict(<class 'list'>, {'a': [['a', 1], ['a', 2]], 'b': [['b', 2]], 'c': [['c', 3]]})
     >>> group_by(xs, lambda x: x[0], fys=lambda ys: [y[1] for y in ys])
-    {'a': [1, 2], 'b': [2], 'c': [3]}
+    defaultdict(<class 'list'>, {'a': [1, 2], 'b': [2], 'c': [3]})
     """
     groups = collections.defaultdict(list)
     for k, ys in itertools.groupby(sorted(xs, key=fx), key=fx):

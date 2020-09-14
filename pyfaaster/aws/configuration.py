@@ -20,7 +20,7 @@ def load(conn, config_bucket, config_file):
     file_content = content_object['Body'].read().decode('utf-8')
 
     settings = json.loads(file_content)
-    logger.debug(f'loaded settings')
+    logger.debug('loaded settings')
     return settings
 
 
