@@ -23,6 +23,7 @@ blocks:
           - sem-version python 3.8
           - checkout
           - cache restore dev-requirements-$SEMAPHORE_GIT_BRANCH-$(checksum requirements-dev.txt),requirements
+          - make init
       jobs:
         - name: Check Version
           commands:
