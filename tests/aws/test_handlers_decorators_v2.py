@@ -413,6 +413,29 @@ def test_http_response_with_HTTPResponseException():
 
 
 @pytest.mark.unit
+def test_http_response_with_pseudo_HTTPResponseException():
+    input_event = {}
+    expected_statuscode = 420
+    expected_body = {'some': 'random error'}
+
+    class myCustomHTTPResponseException(Exception):
+        def __init__(self, body, statusCode=500):
+            self.body = body
+            self.statusCode = statusCode
+
+    def http_exception_handler(e, c, **kwargs):
+        raise myCustomHTTPResponseException(body=expected_body, statusCode=expected_statuscode)
+
+    # lambda w/ myCustomHTTPResponseException
+    handler = decs.http_response()(http_exception_handler)
+    response = handler(input_event, None)
+    actual_output = json.loads(response['body'])
+
+    assert actual_output == expected_body
+    assert response['statusCode'] == expected_statuscode
+
+
+@pytest.mark.unit
 def test_scopes():
     event = {
         'requestContext': {
