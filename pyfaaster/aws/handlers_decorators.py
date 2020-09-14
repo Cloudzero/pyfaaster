@@ -272,12 +272,19 @@ def http_response(default_error_message=None):
                     'body': json.dumps(err.body, iterable_as_array=True),
                 }
             except Exception as err:
-                logger.exception(err)
-                lambda_function_name = context.function_name.split('.')[-1].replace('_', ' ')
-                return {
-                    'statusCode': 500,
-                    'body': default_error_message or f'Failed to {lambda_function_name}.',
-                }
+                # Try and handle HTTPResponseException like objects
+                if hasattr(err, 'statusCode') and hasattr(err, 'body'):
+                    return {
+                        'statusCode': err.statusCode,
+                        'body': json.dumps(err.body, iterable_as_array=True),
+                    }
+                else:
+                    logger.exception(err)
+                    lambda_function_name = context.function_name.split('.')[-1].replace('_', ' ')
+                    return {
+                        'statusCode': 500,
+                        'body': default_error_message or f'Failed to {lambda_function_name}.',
+                    }
 
         return handler_wrapper
     return http_response_handler
