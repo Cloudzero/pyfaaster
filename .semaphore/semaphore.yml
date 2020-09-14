@@ -26,4 +26,4 @@ blocks:
             - flake8
         - name: Python Tests
           commands:
-            - tox
+            - pytest
