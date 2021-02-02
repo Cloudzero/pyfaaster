@@ -4,3 +4,4 @@
 boto3>=1.14.60
 simplejson>=3.17.2
 cachetools>=4.1.1
+voluptuous>=0.12.0
