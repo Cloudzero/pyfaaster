@@ -14,7 +14,6 @@ import pyfaaster.aws.publish as publish
 import pyfaaster.aws.tools as tools
 import pyfaaster.common.utils as utils
 
-
 logger = tools.setup_logging('pyfaaster')
 
 
@@ -356,6 +355,63 @@ def publisher(handler):
         result = handler(event, context, **kwargs)
         conn = publish.conn(kwargs['region'], kwargs['account_id'], kwargs['NAMESPACE'])
         publish.publish(conn, result.get('messages', {}))
+        return result
+
+    return handler_wrapper
+
+
+def event_publisher(handler):
+    """ Decorator that will publish events to SNS Topics (and eventually EventBridge).
+    This decorator looks for a 'events' key in the result of the wrapper decorator.
+    It expects result['events'] to be a dict where key is target (i.e. Topic Name or EventBus)
+    or ARN and value is an array messages to be sent. It will publish each event to its respective target.
+
+    Each must adhere to the followign schema:
+    {
+        'type': str,
+        'detail': dict
+    }
+
+    For example:
+
+    response['events'] = {
+        'target-1': [
+            {
+                'type': 'event-1-type',
+                'details': {}
+            },
+            {
+                'type': 'event-2-type',
+                'details': {}
+            },
+        ],
+        'target-2': [
+            {
+                'type': 'event-3-type',
+                'details': {}
+            },
+            {
+                'type': 'event-4-type',
+                'details': {}
+            },
+        ]
+    }
+
+    Args:
+        handler (func): lambda handler whose result will be checked for messages to publish
+
+    Returns:
+        handler (func): a publishing lambda handler
+    """
+
+    @account_id_aware
+    @namespace_aware
+    @region_aware
+    def handler_wrapper(event, context, **kwargs):
+        result = handler(event, context, **kwargs)
+        # TODO: Add code to check configuration and send via SNS or EventBridge accordingly
+        conn = publish.conn(kwargs['region'], kwargs['account_id'], kwargs['NAMESPACE'])
+        publish.publish_events(conn, result.get('events', {}))
         return result
 
     return handler_wrapper
