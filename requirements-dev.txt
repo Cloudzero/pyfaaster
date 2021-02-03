@@ -1,6 +1,7 @@
 # Copyright (c) 2016-present, CloudZero, Inc. All rights reserved.
 # Licensed under the BSD-style license. See LICENSE file in the project root for full license information.
 
+--extra-index-url https://pypi.cloudzero.com/
 docker>=4.3.1
 flake8>=3.8.3
 flake8-copyright>=0.2.2
@@ -12,4 +13,7 @@ pytest-mock>=3.3.1
 twine>=3.2.0
 setuptools>=50.3.0
 wheel>=0.35.1
+hypothesis>=5.37.4
+cz-common-python>=0.10.2
+freezegun>=1.0.0
 -r requirements.txt

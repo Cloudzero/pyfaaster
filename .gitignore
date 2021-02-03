@@ -156,3 +156,6 @@ typings/
 
 # text editor
 *.swp
+
+.vscode
+.python-version
