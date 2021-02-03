@@ -1,0 +1,22 @@
+version: v1.0
+name: Push to PyPi.cloudzero.com
+agent:
+  machine:
+    type: e1-standard-2
+    os_image: ubuntu1804
+blocks:
+  - name: Push
+    task:
+      prologue:
+        commands:
+          - sem-version python 3.8
+          - checkout
+          - cache restore dev-requirements-$SEMAPHORE_GIT_BRANCH-$(checksum requirements-dev.txt),requirements
+          - make init
+      jobs:
+        - name: Push
+          commands:
+            - make build
+            - s3pypi --bucket pypi.cloudzero.com --force
+      secrets:
+        - name: pypi-cloudzero-deploy
