@@ -16,4 +16,7 @@ blocks:
       jobs:
         - name: Upload
           commands:
-            - make upload
+            - make TWINE_USERNAME=${PYPI_USERNAME} TWINE_PASSWORD=${PYPI_PASSWORD} upload
+      secrets:
+        - name: PyPi Deployment
+        
