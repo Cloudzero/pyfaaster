@@ -27,3 +27,17 @@ blocks:
         - name: Python Tests
           commands:
             - pytest
+
+promotions:
+  - name: Push to pypi.cloudzero.com
+    pipeline_file: cloudzero_pypi.yml
+    auto_promote_on:
+      - result: passed
+        branch:
+          - master
+  - name: Tag Release
+    pipeline_file: tag_release.yml
+    auto_promote_on:
+      - result: passed
+        branch:
+          - master
