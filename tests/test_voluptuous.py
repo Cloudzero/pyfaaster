@@ -1,6 +1,7 @@
-# Copyright (c) 2020 CloudZero - ALL RIGHTS RESERVED - PROPRIETARY AND CONFIDENTIAL
-# Unauthorized copying of this file and/or project, via any medium is strictly prohibited.
-# Direct all questions to legal@cloudzero.com
+# -*- coding: utf-8 -*-
+# Copyright (c) 2016-present, CloudZero, Inc. All rights reserved.
+# Licensed under the BSD-style license. See LICENSE file in the project root for full license information.
+
 
 import pytest
 from voluptuous import Maybe
