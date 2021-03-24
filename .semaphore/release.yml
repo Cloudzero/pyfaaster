@@ -1,0 +1,22 @@
+version: v1.0
+name: Release
+agent:
+  machine:
+    type: e1-standard-2
+    os_image: ubuntu1804
+blocks:
+  - name: Upload
+    task:
+      prologue:
+        commands:
+          - sem-version python 3.8
+          - checkout
+          - cache restore dev-requirements-$SEMAPHORE_GIT_BRANCH-$(checksum requirements-dev.txt),requirements
+          - make init
+      jobs:
+        - name: Upload
+          commands:
+            - make TWINE_USERNAME=${PYPI_USERNAME} TWINE_PASSWORD=${PYPI_PASSWORD} upload
+      secrets:
+        - name: PyPi Deployment
+        
