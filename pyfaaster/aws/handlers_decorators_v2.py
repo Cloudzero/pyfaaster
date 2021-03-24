@@ -466,7 +466,7 @@ def configuration_aware(config_file, create=False):
         handler (func): a configuration aware lambda handler
     """
     def configuration_handler(handler):
-        def handler_wrapper(event, context, **kwargs):
+        def handler_wrapper(*args, **kwargs):
             config_bucket = os.environ['CONFIG']
             encrypt_key_arn = os.environ.get('ENCRYPT_KEY_ARN')
 
@@ -483,7 +483,8 @@ def configuration_aware(config_file, create=False):
                 'load': lambda: settings or {},
                 'save': functools.partial(conf.save, conn, config_bucket, config_file),
             }
-            return handler(event, context, configuration=configuration, **kwargs)
+            kwargs["configuration"] = configuration
+            return handler(*args, **kwargs)
 
         return handler_wrapper
 
