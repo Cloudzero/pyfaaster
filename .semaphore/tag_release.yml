@@ -1,0 +1,28 @@
+version: v1.0
+name: Tag Release
+agent:
+  machine:
+    type: e1-standard-2
+    os_image: ubuntu1804
+blocks:
+  - name: Release
+    task:
+      prologue:
+        commands:
+          - sudo chmod 600 ~/.ssh/semaphore_git_ssh
+          - sem-version python 3.8
+          - checkout
+          - cache restore dev-requirements-$SEMAPHORE_GIT_BRANCH-$(checksum requirements-dev.txt),requirements
+          - git config user.email "ops@cloudzero.com"
+          - git config user.name "Automated CZ Release"
+      jobs:
+        - name: Tag
+          commands:
+            - git tag -l | xargs git tag -d
+            - git fetch --tags
+            - CZ_VERSION=$(python -c "from pyfaaster import __version__; print(__version__.__version__)")
+            - git tag -a $CZ_VERSION -m "Automatic Semaphore Release for v$CZ_VERSION"
+            - git push origin $CZ_VERSION
+      secrets:
+        - name: Github SSH Key
+        - name: SSH Config

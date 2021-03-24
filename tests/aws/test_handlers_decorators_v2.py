@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2016-present, CloudZero, Inc. All rights reserved.
 # Licensed under the BSD-style license. See LICENSE file in the project root for full license information.
 from collections import namedtuple
@@ -10,15 +9,9 @@ import simplejson as json
 from pyfaaster.aws.exceptions import HTTPResponseException
 import pyfaaster.aws.handlers_decorators_v2 as decs
 import pyfaaster.common.utils as utils
+from tests.aws.common import MockContext
 
 _CONFIG_BUCKET = 'example_config_bucket'
-
-
-class MockContext(dict):
-    def __init__(self, farn, function_name=None):
-        self.invoked_function_arn = farn
-        self.function_name = function_name
-        dict.__init__(self, invoked_function_arn=farn, function_name=function_name)
 
 
 @pytest.fixture(scope='function')
