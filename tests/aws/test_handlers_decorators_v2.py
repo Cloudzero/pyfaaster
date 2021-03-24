@@ -661,6 +661,7 @@ def test_catch_exceptions():
 @pytest.mark.unit
 def test_configuration_aware_lambda_handler(context):
     test_config = {"test": "configuration"}
+
     @decs.configuration_aware(CONFIG_FILE)
     def handler(event, context, configuration=None):
         assert configuration['load']() == test_config
@@ -673,6 +674,7 @@ def test_configuration_aware_lambda_handler(context):
 @pytest.mark.unit
 def test_configuration_aware_generic_function(context):
     test_config = {"test": "configuration"}
+
     @decs.configuration_aware(CONFIG_FILE)
     def handler(*args, **kwargs):
         assert kwargs['configuration']['load']() == test_config
