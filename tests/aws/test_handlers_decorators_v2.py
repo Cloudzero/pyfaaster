@@ -1,6 +1,7 @@
 # Copyright (c) 2016-present, CloudZero, Inc. All rights reserved.
 # Licensed under the BSD-style license. See LICENSE file in the project root for full license information.
 from collections import namedtuple
+import mock
 
 import os
 import pytest
@@ -12,11 +13,12 @@ import pyfaaster.common.utils as utils
 from tests.aws.common import MockContext
 
 _CONFIG_BUCKET = 'example_config_bucket'
+CONFIG_FILE = 'example_config.json'
 
 
 @pytest.fixture(scope='function')
 def context(mocker):
-    context = namedtuple('context', ['os'])
+    context = namedtuple('context', ['os', 'mock_conf'])
 
     orig_env = os.environ.copy()
     os.environ['NAMESPACE'] = 'test-ns'
@@ -654,3 +656,30 @@ def test_catch_exceptions():
         throws_exception()
     except Exception:
         pytest.fail("The catch_exceptions decorator didn't do its job! You had one job ... one job!")
+
+
+@pytest.mark.unit
+def test_configuration_aware_lambda_handler(context):
+    test_config = {"test": "configuration"}
+
+    @decs.configuration_aware(CONFIG_FILE)
+    def handler(event, context, configuration=None):
+        assert configuration['load']() == test_config
+
+    with mock.patch("pyfaaster.aws.handlers_decorators_v2.conf") as mock_conf:
+        mock_conf.load.return_value = test_config
+        handler({}, None)
+
+
+@pytest.mark.unit
+def test_configuration_aware_generic_function(context):
+    test_config = {"test": "configuration"}
+
+    @decs.configuration_aware(CONFIG_FILE)
+    def handler(*args, **kwargs):
+        assert kwargs['configuration']['load']() == test_config
+
+    with mock.patch("pyfaaster.aws.handlers_decorators_v2.conf") as mock_conf:
+        mock_conf.load.return_value = test_config
+        handler()
+        handler('foo', 'bar', {'x': 'y'}, test_arg_1="something", test_arg_2=0)
