@@ -48,6 +48,7 @@ def environ_aware(required=None, optional=None):
 
 
 namespace_aware = environ_aware(['NAMESPACE'], [])
+alfa_table_namespace_override_aware = environ_aware(['NAMESPACE'], ['USE_ALFA_TABLES_OVERRIDE'])
 
 
 def domain_aware(handler):
